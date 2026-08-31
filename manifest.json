@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "vincent.tray",
+  "name": "My System tray",
+  "version": "1.0.0",
+  "author": "Vincent Ritter",
+  "description": "Status notifier items plus Bluetooth, network, display, Dropbox, and Tailscale in the hover drawer",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Tray.qml"
+  },
+  "barWidget": {
+    "displayName": "My System tray",
+    "description": "Status notifier items plus Bluetooth, network, display, Dropbox, and Tailscale in the hover drawer",
+    "category": "Status",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.tray"
+  }
+}
