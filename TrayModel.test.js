@@ -139,3 +139,100 @@ test("hosted panel open ignores a foreign popout on the plugin bar facade", () =
   assert.equal(TrayModel.hostedPanelIsOpen({ activePopout: foreign, foreignPopoutMarker: foreign }), false)
   assert.equal(TrayModel.hostedPanelIsOpen({ activePopout: { opened: true }, foreignPopoutMarker: foreign }), true)
 })
+
+test("missing extraWidgets keeps the default list, an empty array means none", () => {
+  const fallback = ["omarchy.bluetooth"]
+  assert.deepEqual(TrayModel.extraWidgetIdsFromSettings({}, fallback), ["omarchy.bluetooth"])
+  assert.deepEqual(TrayModel.extraWidgetIdsFromSettings({ extraWidgets: [] }, fallback), [])
+  assert.deepEqual(
+    TrayModel.extraWidgetIdsFromSettings({ extraWidgets: ["omarchy.audio"] }, fallback),
+    ["omarchy.audio"]
+  )
+  const like = { 0: "omarchy.audio", 1: "omarchy.power", length: 2 }
+  assert.deepEqual(TrayModel.extraWidgetIdsFromSettings({ extraWidgets: like }, fallback), ["omarchy.audio", "omarchy.power"])
+})
+
+test("toggleId adds a missing widget and removes one that is already listed", () => {
+  assert.deepEqual(TrayModel.toggleId(["omarchy.bluetooth"], "omarchy.audio"), ["omarchy.bluetooth", "omarchy.audio"])
+  assert.deepEqual(TrayModel.toggleId(["omarchy.bluetooth", "omarchy.audio"], "omarchy.bluetooth"), ["omarchy.audio"])
+  assert.deepEqual(TrayModel.toggleId(["omarchy.bluetooth"], ""), ["omarchy.bluetooth"])
+})
+
+test("adding a bar widget takes it off the bar so the tray can host it", () => {
+  const add = TrayModel.extraWidgetTogglePlan(["omarchy.bluetooth"], "omarchy.audio", true)
+  assert.deepEqual(add.extras, ["omarchy.bluetooth", "omarchy.audio"])
+  assert.equal(add.adding, true)
+  assert.equal(add.setBarEnabled, false)
+
+  const remove = TrayModel.extraWidgetTogglePlan(["omarchy.bluetooth", "omarchy.audio"], "omarchy.audio", false)
+  assert.deepEqual(remove.extras, ["omarchy.bluetooth"])
+  assert.equal(remove.adding, false)
+  assert.equal(remove.setBarEnabled, true)
+})
+
+test("hostedIds skips widgets that are still on the bar", () => {
+  assert.deepEqual(
+    TrayModel.hostedIds(["omarchy.audio", "omarchy.bluetooth"], { right: [{ id: "omarchy.audio" }] }),
+    ["omarchy.bluetooth"]
+  )
+})
+
+test("layoutWithoutWidget drops one id and leaves the others", () => {
+  const layout = { right: [{ id: "omarchy.audio" }, { id: "vincent.tray" }] }
+  const next = TrayModel.layoutWithoutWidget(layout, "omarchy.audio")
+  assert.equal(TrayModel.layoutHasWidget(next, "omarchy.audio"), false)
+  assert.equal(TrayModel.layoutHasWidget(next, "vincent.tray"), true)
+})
+
+test("catalog entries require a bar-widget manifest and a qml file url", () => {
+  const panel = TrayModel.catalogEntryFromManifest("/usr/share/omarchy/shell/plugins/panels/bluetooth", {
+    id: "omarchy.bluetooth",
+    name: "Bluetooth",
+    kinds: ["bar-widget"],
+    entryPoints: { barWidget: "Panel.qml" },
+    barWidget: { displayName: "Bluetooth" }
+  })
+  assert.equal(panel.id, "omarchy.bluetooth")
+  assert.equal(panel.title, "Bluetooth")
+  assert.equal(panel.url, "file:///usr/share/omarchy/shell/plugins/panels/bluetooth/Panel.qml")
+
+  assert.equal(TrayModel.catalogEntryFromManifest("/tmp/speedtest", {
+    id: "omarchy.speedtest",
+    kinds: ["panel"],
+    entryPoints: { panel: "Panel.qml" }
+  }), null)
+})
+
+test("catalog rows skip the tray itself and sort by title", () => {
+  const rows = TrayModel.catalogRows([
+    { id: "vincent.tray", title: "My System tray", url: "file:///tmp/Tray.qml" },
+    { id: "omarchy.audio", title: "Audio", url: "file:///tmp/audio.qml" },
+    { id: "omarchy.bluetooth", title: "Bluetooth", url: "file:///tmp/bt.qml" }
+  ], ["omarchy.bluetooth"], { right: [{ id: "omarchy.audio" }] })
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0].id, "omarchy.audio")
+  assert.equal(rows[0].onBar, true)
+  assert.equal(rows[0].inTray, false)
+  assert.equal(rows[1].id, "omarchy.bluetooth")
+  assert.equal(rows[1].inTray, true)
+  assert.equal(rows[1].onBar, false)
+})
+
+test("catalog rows keep extraWidgets that the scan missed so they can be removed", () => {
+  const rows = TrayModel.catalogRows([], ["omarchy.dropbox"], {})
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].id, "omarchy.dropbox")
+  assert.equal(rows[0].inTray, true)
+})
+
+test("hosted widget url prefers a catalog entry over the omarchy panel convention", () => {
+  const catalog = [{ id: "omarchy.clock", url: "file:///tmp/BarWidget.qml" }]
+  assert.equal(
+    TrayModel.hostedWidgetUrl("/usr/share/omarchy", "omarchy.clock", catalog),
+    "file:///tmp/BarWidget.qml"
+  )
+  assert.equal(
+    TrayModel.hostedWidgetUrl("/usr/share/omarchy", "omarchy.bluetooth", catalog),
+    "file:///usr/share/omarchy/shell/plugins/panels/bluetooth/Panel.qml"
+  )
+})

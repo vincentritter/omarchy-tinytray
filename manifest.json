@@ -4,7 +4,7 @@
   "name": "My System tray",
   "version": "1.0.0",
   "author": "Vincent Ritter",
-  "description": "Status notifier items plus Bluetooth, network, display, Dropbox, and Tailscale in the hover drawer",
+  "description": "Status notifier items plus chosen bar widgets in the hover drawer",
   "kinds": [
     "bar-widget"
   ],
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "My System tray",
-    "description": "Status notifier items plus Bluetooth, network, display, Dropbox, and Tailscale in the hover drawer",
+    "description": "Status notifier items plus chosen bar widgets in the hover drawer",
     "category": "Status",
     "allowMultiple": false
   },

@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
@@ -21,32 +22,27 @@ BarWidget {
   readonly property var pinnedIds: settings.pinned instanceof Array ? settings.pinned : []
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
   readonly property var defaultExtraWidgets: ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor", "omarchy.dropbox", "omarchy.tailscale"]
-  readonly property var extraWidgetIds: settings.extraWidgets instanceof Array ? settings.extraWidgets : defaultExtraWidgets
+  property var extraWidgetOverride: null
+  readonly property var extraWidgetIds: extraWidgetOverride !== null
+    ? extraWidgetOverride
+    : TrayModel.extraWidgetIdsFromSettings(settings, defaultExtraWidgets)
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
-  readonly property var hostedWidgetIds: hostedIds()
-  readonly property var hostedPinnedIds: {
-    var _p = pinnedIds
-    var _h = hiddenIds
-    return hostedIdsIn("pinned")
+  readonly property string catalogScript: String(Qt.resolvedUrl("scan-catalog.py")).replace(/^file:\/\//, "")
+  property var widgetCatalog: []
+  readonly property var widgetCatalogRows: {
+    var _c = widgetCatalog
+    var _e = extraWidgetIds
+    var layout = root.bar && root.bar.layoutConfig ? root.bar.layoutConfig : null
+    return TrayModel.catalogRows(_c, _e, layout)
   }
-  readonly property var hostedDrawerIds: {
-    var _p = pinnedIds
-    var _h = hiddenIds
-    return hostedIdsIn("drawer")
-  }
-  readonly property var hostedHiddenIds: {
-    var _p = pinnedIds
-    var _h = hiddenIds
-    return hostedIdsIn("hidden")
-  }
+  readonly property var hostedWidgetIds: TrayModel.hostedIds(extraWidgetIds, root.bar ? root.bar.layoutConfig : null)
+  readonly property var hostedPinnedIds: TrayModel.hostedIdsIn(hostedWidgetIds, pinnedIds, hiddenIds, "pinned")
+  readonly property var hostedDrawerIds: TrayModel.hostedIdsIn(hostedWidgetIds, pinnedIds, hiddenIds, "drawer")
+  readonly property var hostedHiddenIds: TrayModel.hostedIdsIn(hostedWidgetIds, pinnedIds, hiddenIds, "hidden")
   readonly property var pinnedItems: bucket("pinned")
   readonly property var drawerItems: bucket("drawer")
   readonly property var allItems: bucket("all")
-  readonly property var manageItems: {
-    var _hosted = hostedWidgetIds
-    var _sni = allItems
-    return buildManageItems()
-  }
+  readonly property var manageItems: allItems
   readonly property bool hasDrawer: allItems.length > 0 || hostedWidgetIds.length > 0
   readonly property int drawerCount: drawerItems.length + hostedDrawerIds.length
   readonly property int trayItemExtent: Style.bar.iconSlot
@@ -186,56 +182,6 @@ BarWidget {
     return "drawer"
   }
 
-  function hostedIds() {
-    var ids = extraWidgetIds
-    var layout = root.bar && root.bar.layoutConfig ? root.bar.layoutConfig : null
-    var result = []
-    for (var i = 0; i < ids.length; i++) {
-      var id = String(ids[i] || "")
-      if (!id) continue
-      if (TrayModel.layoutHasWidget(layout, id)) continue
-      result.push(id)
-    }
-    return result
-  }
-
-  function hostedIdsIn(category) {
-    var _pinned = pinnedIds
-    var _hidden = hiddenIds
-    var ids = hostedWidgetIds
-    var result = []
-    for (var i = 0; i < ids.length; i++) {
-      var id = ids[i]
-      var bucketName = "drawer"
-      if (_hidden.indexOf(id) !== -1) bucketName = "hidden"
-      else if (_pinned.indexOf(id) !== -1) bucketName = "pinned"
-      if (bucketName === category) result.push(id)
-    }
-    return result
-  }
-
-  function hostedDisplayName(id) {
-    var parts = String(id || "").split(".")
-    var last = parts.length ? parts[parts.length - 1] : String(id || "")
-    return last ? last.charAt(0).toUpperCase() + last.slice(1) : "Widget"
-  }
-
-  function buildManageItems() {
-    var result = []
-    var hosted = hostedWidgetIds
-    for (var i = 0; i < hosted.length; i++) {
-      result.push({
-        id: hosted[i],
-        title: hostedDisplayName(hosted[i]),
-        icon: "",
-        kind: "hosted"
-      })
-    }
-    var sni = allItems
-    for (var j = 0; j < sni.length; j++) result.push(sni[j])
-    return result
-  }
-
   function ownedByOmarchy(item) {
     var layout = root.bar && root.bar.layoutConfig ? root.bar.layoutConfig : null
     return TrayModel.ownedByOmarchy(item, layout, extraWidgetIds)
@@ -257,15 +203,80 @@ BarWidget {
     return result
   }
 
-  function persistTrayState(pinned, hidden) {
+  function persistTrayState(pinned, hidden, extras) {
     if (!root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return
     var id = root.moduleName || "vincent.tray"
     root.bar.shell.updateEntryInline(id, {
       id: id,
       pinned: pinned,
       hidden: hidden,
-      extraWidgets: extraWidgetIds
+      extraWidgets: extras !== undefined ? extras : extraWidgetIds
     })
+  }
+
+  property var barWidgetQueue: []
+
+  function setBarWidgetEnabled(id, enabled) {
+    if (!id) return
+    var next = barWidgetQueue.slice()
+    next.push({ id: String(id), enabled: !!enabled })
+    barWidgetQueue = next
+    root.runBarWidgetQueue()
+  }
+
+  function runBarWidgetQueue() {
+    if (barWidgetCtl.running) return
+    if (!barWidgetQueue.length) return
+    var next = barWidgetQueue.slice()
+    var job = next.shift()
+    barWidgetQueue = next
+    barWidgetCtl.command = ["omarchy", "plugin", job.enabled ? "enable" : "disable", job.id]
+    barWidgetCtl.running = true
+  }
+
+  function reconcileHostedBarWidgets() {
+    var layout = root.bar && root.bar.layoutConfig
+    var ids = extraWidgetIds
+    for (var i = 0; i < ids.length; i++) {
+      var id = String(ids[i] || "")
+      if (!id || id === "vincent.tray") continue
+      if (TrayModel.layoutHasWidget(layout, id)) root.setBarWidgetEnabled(id, false)
+    }
+  }
+
+  function toggleExtraWidget(iid) {
+    var onBar = TrayModel.layoutHasWidget(root.bar && root.bar.layoutConfig, iid)
+    var plan = TrayModel.extraWidgetTogglePlan(extraWidgetIds, iid, onBar)
+    var extras = plan.extras
+    var p = pinnedIds.slice(), h = hiddenIds.slice()
+    if (!plan.adding) {
+      var pi = p.indexOf(iid)
+      if (pi !== -1) p.splice(pi, 1)
+      var hi = h.indexOf(iid)
+      if (hi !== -1) h.splice(hi, 1)
+    }
+    extraWidgetOverride = extras
+    if (plan.adding) {
+      persistTrayState(p, h, extras)
+      if (plan.setBarEnabled === false) root.setBarWidgetEnabled(iid, false)
+    } else {
+      if (plan.setBarEnabled === true) root.setBarWidgetEnabled(iid, true)
+      persistTrayState(p, h, extras)
+    }
+  }
+
+  function applyCatalog(raw) {
+    try {
+      var parsed = JSON.parse(raw || "[]")
+      root.widgetCatalog = Array.isArray(parsed) ? parsed : []
+    } catch (e) {
+      root.widgetCatalog = []
+    }
+  }
+
+  function rescanCatalog() {
+    catalogScan.running = false
+    catalogScan.running = true
   }
 
   function togglePin(iid) {
@@ -296,6 +307,37 @@ BarWidget {
   clip: false
   implicitWidth: root.vertical ? root.barSize : trayContent.implicitWidth
   implicitHeight: root.vertical ? trayContent.implicitHeight : root.barSize
+
+  Process {
+    id: barWidgetCtl
+    onExited: function(code) {
+      if (code !== 0) console.warn("vincent.tray bar widget toggle failed", code, barWidgetCtl.command)
+      Qt.callLater(root.runBarWidgetQueue)
+    }
+  }
+
+  Process {
+    id: catalogScan
+    command: [
+      "python3",
+      root.catalogScript,
+      root.omarchyPath + "/shell/plugins/panels",
+      (Quickshell.env("HOME") || "") + "/.config/omarchy/plugins"
+    ]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.applyCatalog(text)
+    }
+    onExited: function(code) {
+      if (code !== 0) console.warn("vincent.tray catalog scan failed", code, root.catalogScript)
+    }
+  }
+
+  Component.onCompleted: {
+    root.rescanCatalog()
+    Qt.callLater(root.reconcileHostedBarWidgets)
+  }
+  onManagePopupOpenChanged: if (managePopupOpen) root.rescanCatalog()
 
   Behavior on revealProgress {
     NumberAnimation { duration: root.animationDuration; easing.type: Easing.OutCubic }
@@ -501,13 +543,23 @@ BarWidget {
     owner: root
     bar: root.bar
     open: root.managePopupOpen
-    contentWidth: managePopup.fittedContentWidth(Style.space(300))
-    contentHeight: managePopup.fittedContentHeight(manageColumn.implicitHeight)
+    contentWidth: managePopup.fittedContentWidth(Style.space(320))
+    contentHeight: managePopup.fittedContentHeight(manageFlick.contentHeight, Style.space(480))
 
-    Column {
-      id: manageColumn
+    Flickable {
+      id: manageFlick
       anchors.fill: parent
-      spacing: Style.space(8)
+      contentWidth: width
+      contentHeight: manageColumn.implicitHeight
+      clip: true
+      boundsBehavior: Flickable.StopAtBounds
+      interactive: contentHeight > height
+      flickableDirection: Flickable.VerticalFlick
+
+      Column {
+        id: manageColumn
+        width: manageFlick.width
+        spacing: Style.space(8)
 
       Text {
         text: "Tray icons"
@@ -518,7 +570,7 @@ BarWidget {
       }
 
       Text {
-        text: "Pinned icons stay visible. Hidden icons never show."
+        text: "Add moves a widget off the bar into this tray. Remove puts it back. Pinned app icons stay visible. Hidden icons never show."
         color: Qt.darker(root.foreground, 1.4)
         font.family: root.fontFamily
         font.pixelSize: Style.font.caption
@@ -527,12 +579,69 @@ BarWidget {
       }
 
       Text {
-        visible: root.manageItems.length === 0
+        visible: root.widgetCatalogRows.length > 0
+        text: "Bar widgets"
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.bodySmall
+        font.bold: true
+      }
+
+      Repeater {
+        model: root.widgetCatalogRows
+        delegate: Item {
+          id: extraRow
+          required property var modelData
+          required property int index
+          width: manageColumn.width
+          implicitHeight: 28
+
+          readonly property string itemId: String(modelData.id || "")
+          readonly property bool inTray: extraRow.modelData.inTray === true
+          readonly property bool onBar: extraRow.modelData.onBar === true
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.right: extraAddBtn.left
+            anchors.rightMargin: Style.space(8)
+            text: extraRow.modelData.title + (extraRow.onBar ? " (on the bar)" : "")
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            elide: Text.ElideRight
+          }
+
+          Button {
+            id: extraAddBtn
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            text: extraRow.inTray ? "Remove" : "Add"
+            foreground: root.foreground
+            horizontalPadding: 8
+            verticalPadding: 3
+            fontSize: Style.font.bodySmall
+            onClicked: root.toggleExtraWidget(extraRow.itemId)
+          }
+        }
+      }
+
+      Text {
+        visible: root.manageItems.length === 0 && root.widgetCatalogRows.length === 0
         text: "No tray items reporting."
         color: Qt.darker(root.foreground, 1.5)
         font.family: root.fontFamily
         font.pixelSize: Style.font.bodySmall
         font.italic: true
+      }
+
+      Text {
+        visible: root.manageItems.length > 0
+        text: "App icons"
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.bodySmall
+        font.bold: true
       }
 
       Repeater {
@@ -610,6 +719,7 @@ BarWidget {
             onClicked: root.toggleHide(rowRoot.itemId)
           }
         }
+      }
       }
     }
   }
@@ -907,7 +1017,7 @@ BarWidget {
 
     readonly property string widgetId: String(modelData || "")
     readonly property var barInstance: root.bar
-    readonly property string widgetUrl: TrayModel.hostedWidgetUrl(root.omarchyPath, widgetId)
+    readonly property string widgetUrl: TrayModel.hostedWidgetUrl(root.omarchyPath, widgetId, root.widgetCatalog)
 
     implicitWidth: extraLoader.item && extraLoader.item.visible !== false
       ? extraLoader.item.implicitWidth

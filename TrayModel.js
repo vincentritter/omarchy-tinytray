@@ -67,8 +67,152 @@ function setDescendantClickable(node, on) {
   return count
 }
 
-function hostedWidgetUrl(omarchyPath, id) {
+function extraWidgetIdsFromSettings(settings, fallback) {
+  var raw = settings ? settings.extraWidgets : undefined
+  if (raw && typeof raw !== "string" && typeof raw.length === "number") {
+    var out = []
+    for (var i = 0; i < raw.length; i++) out.push(raw[i])
+    return out
+  }
+  return Array.isArray(fallback) ? fallback.slice() : []
+}
+
+function toggleId(ids, id) {
   var key = String(id || "")
+  var list = Array.isArray(ids) ? ids : []
+  if (!key) return list.slice()
+  var next = []
+  var found = false
+  for (var i = 0; i < list.length; i++) {
+    if (String(list[i]) === key) {
+      found = true
+      continue
+    }
+    next.push(list[i])
+  }
+  if (!found) next.push(key)
+  return next
+}
+
+function extraWidgetTogglePlan(currentIds, id, onBar) {
+  var extras = toggleId(currentIds, id)
+  var key = String(id || "")
+  var adding = extras.indexOf(key) !== -1
+  return {
+    extras: extras,
+    adding: adding,
+    setBarEnabled: adding ? (onBar ? false : null) : true
+  }
+}
+
+function hostedIds(extraIds, layout) {
+  var ids = extraIds && typeof extraIds.length === "number" ? extraIds : []
+  var result = []
+  for (var i = 0; i < ids.length; i++) {
+    var id = String(ids[i] || "")
+    if (!id) continue
+    if (layoutHasWidget(layout, id)) continue
+    result.push(id)
+  }
+  return result
+}
+
+function hostedIdsIn(hosted, pinned, hidden, category) {
+  var ids = hosted && typeof hosted.length === "number" ? hosted : []
+  var p = pinned && typeof pinned.length === "number" ? pinned : []
+  var h = hidden && typeof hidden.length === "number" ? hidden : []
+  var result = []
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i]
+    var bucketName = "drawer"
+    if (h.indexOf(id) !== -1) bucketName = "hidden"
+    else if (p.indexOf(id) !== -1) bucketName = "pinned"
+    if (bucketName === category) result.push(id)
+  }
+  return result
+}
+
+function layoutWithoutWidget(layout, id) {
+  var key = String(id || "")
+  var next = { left: [], center: [], right: [] }
+  var sections = ["left", "center", "right"]
+  for (var s = 0; s < sections.length; s++) {
+    var name = sections[s]
+    var entries = layout && layout[name]
+    var out = []
+    if (Array.isArray(entries)) {
+      for (var i = 0; i < entries.length; i++) {
+        if (entryId(entries[i]) === key) continue
+        out.push(entries[i])
+      }
+    }
+    next[name] = out
+  }
+  return next
+}
+
+function catalogEntryFromManifest(sourceDir, manifest) {
+  if (!manifest || typeof manifest !== "object") return null
+  var kinds = manifest.kinds
+  if (!Array.isArray(kinds) || kinds.indexOf("bar-widget") === -1) return null
+  var ep = manifest.entryPoints && manifest.entryPoints.barWidget
+  if (!ep || typeof ep !== "string") return null
+  if (ep.indexOf("..") !== -1) return null
+  var id = String(manifest.id || "")
+  if (!id) return null
+  var dir = String(sourceDir || "").replace(/\/+$/, "")
+  if (!dir) return null
+  var meta = manifest.barWidget && typeof manifest.barWidget === "object" ? manifest.barWidget : {}
+  var title = String(meta.displayName || manifest.name || id)
+  return {
+    id: id,
+    title: title,
+    url: "file://" + dir + "/" + ep.replace(/^\/+/, "")
+  }
+}
+
+function catalogRows(entries, extraIds, layout) {
+  var skip = { "vincent.tray": true, "omarchy.tray": true }
+  var extras = Array.isArray(extraIds) ? extraIds : []
+  var rows = []
+  var seen = {}
+  var list = Array.isArray(entries) ? entries : []
+  for (var i = 0; i < list.length; i++) {
+    var entry = list[i]
+    if (!entry || skip[entry.id] || !entry.url) continue
+    seen[entry.id] = true
+    rows.push({
+      id: entry.id,
+      title: String(entry.title || entry.id),
+      url: entry.url,
+      inTray: extras.indexOf(entry.id) !== -1,
+      onBar: layoutHasWidget(layout, entry.id)
+    })
+  }
+  for (var j = 0; j < extras.length; j++) {
+    var extraId = String(extras[j] || "")
+    if (!extraId || skip[extraId] || seen[extraId]) continue
+    seen[extraId] = true
+    rows.push({
+      id: extraId,
+      title: extraId,
+      url: "",
+      inTray: true,
+      onBar: layoutHasWidget(layout, extraId)
+    })
+  }
+  rows.sort(function (a, b) {
+    return String(a.title).toLowerCase().localeCompare(String(b.title).toLowerCase())
+  })
+  return rows
+}
+
+function hostedWidgetUrl(omarchyPath, id, catalog) {
+  var key = String(id || "")
+  var list = Array.isArray(catalog) ? catalog : []
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] && list[i].id === key && list[i].url) return String(list[i].url)
+  }
   var prefix = "omarchy."
   if (key.indexOf(prefix) !== 0) return ""
   var name = key.slice(prefix.length)
@@ -93,6 +237,14 @@ if (typeof module !== "undefined") {
     drawerAcceptsInput: drawerAcceptsInput,
     setDescendantClickable: setDescendantClickable,
     hostedWidgetUrl: hostedWidgetUrl,
-    hostedPanelIsOpen: hostedPanelIsOpen
+    hostedPanelIsOpen: hostedPanelIsOpen,
+    extraWidgetIdsFromSettings: extraWidgetIdsFromSettings,
+    toggleId: toggleId,
+    extraWidgetTogglePlan: extraWidgetTogglePlan,
+    hostedIds: hostedIds,
+    hostedIdsIn: hostedIdsIn,
+    layoutWithoutWidget: layoutWithoutWidget,
+    catalogEntryFromManifest: catalogEntryFromManifest,
+    catalogRows: catalogRows
   }
 }
