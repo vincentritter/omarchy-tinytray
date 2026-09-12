@@ -22,6 +22,7 @@ BarWidget {
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
   readonly property var defaultExtraWidgets: ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor", "omarchy.dropbox", "omarchy.tailscale"]
   readonly property var extraWidgetIds: settings.extraWidgets instanceof Array ? settings.extraWidgets : defaultExtraWidgets
+  readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
   readonly property var hostedWidgetIds: hostedIds()
   readonly property var hostedPinnedIds: {
     var _p = pinnedIds
@@ -54,14 +55,7 @@ BarWidget {
   readonly property int drawerExtent: drawerCount > 0 ? drawerCount * trayItemExtent + (drawerCount - 1) * trayItemGap : 0
   // Match Waybar's group/tray-expander drawer transition-duration.
   readonly property int animationDuration: 600
-  readonly property bool hostedPanelOpen: {
-    var ids = hostedDrawerIds
-    if (!root.bar || typeof root.bar.isBarWidgetOpen !== "function") return false
-    for (var i = 0; i < ids.length; i++) {
-      if (root.bar.isBarWidgetOpen(ids[i])) return true
-    }
-    return false
-  }
+  readonly property bool hostedPanelOpen: TrayModel.hostedPanelIsOpen(root.bar)
   readonly property bool drawerAcceptsInput: TrayModel.drawerAcceptsInput(expanded, hostedPanelOpen)
   property real revealProgress: (expanded || hostedPanelOpen) ? 1 : 0
   readonly property real revealExtent: drawerExtent * revealProgress
@@ -221,11 +215,6 @@ BarWidget {
   }
 
   function hostedDisplayName(id) {
-    var registry = root.bar && root.bar.barWidgetRegistry
-    var widgets = registry ? registry.widgets : null
-    var entry = widgets ? widgets[id] : null
-    var meta = entry && entry.metadata ? entry.metadata : {}
-    if (meta.displayName) return String(meta.displayName)
     var parts = String(id || "").split(".")
     var last = parts.length ? parts[parts.length - 1] : String(id || "")
     return last ? last.charAt(0).toUpperCase() + last.slice(1) : "Widget"
@@ -906,7 +895,8 @@ BarWidget {
 
   // Hosts an Omarchy bar widget inside the tray drawer so it can sit next to
   // app tray icons (1Password) instead of taking a permanent slot on the bar.
-  // Registers as a module slot so Super+Ctrl panel hotkeys still find it.
+  // 4.0.3 gives plugins PluginBarApi, which has no widget registry, so these
+  // load first-party Panel.qml by path and take the plugin bar facade.
   component HostedWidget: Item {
     id: hostedRoot
 
@@ -916,44 +906,25 @@ BarWidget {
     property int clickableSyncTries: 0
 
     readonly property string widgetId: String(modelData || "")
-    property string moduleName: widgetId
-    property string region: "right"
     readonly property var barInstance: root.bar
-    readonly property int registryRevision: barInstance && barInstance.barWidgetRegistry ? barInstance.barWidgetRegistry.revision : 0
-    readonly property var registryComponent: {
-      var _rev = hostedRoot.registryRevision
-      var registry = hostedRoot.barInstance && hostedRoot.barInstance.barWidgetRegistry
-      var widgets = registry ? registry.widgets : null
-      if (!widgets) return null
-      var id = hostedRoot.widgetId
-      var entry = widgets[id]
-      if (entry && entry.component) return entry.component
-      var keys = Object.keys(widgets)
-      for (var i = 0; i < keys.length; i++) {
-        if (String(keys[i]) === String(id) && widgets[keys[i]] && widgets[keys[i]].component)
-          return widgets[keys[i]].component
-      }
-      return null
-    }
-    readonly property var activeItem: extraLoader.item
+    readonly property string widgetUrl: TrayModel.hostedWidgetUrl(root.omarchyPath, widgetId)
 
-    implicitWidth: extraLoader.item && extraLoader.item.visible !== false ? extraLoader.item.implicitWidth : 0
-    implicitHeight: extraLoader.item && extraLoader.item.visible !== false ? extraLoader.item.implicitHeight : 0
+    implicitWidth: extraLoader.item && extraLoader.item.visible !== false
+      ? extraLoader.item.implicitWidth
+      : (widgetUrl !== "" ? root.trayItemExtent : 0)
+    implicitHeight: extraLoader.item && extraLoader.item.visible !== false
+      ? extraLoader.item.implicitHeight
+      : (widgetUrl !== "" ? root.trayItemExtent : 0)
     width: implicitWidth
     height: implicitHeight
 
     Loader {
       id: extraLoader
-      active: hostedRoot.registryComponent !== null
-      sourceComponent: hostedRoot.registryComponent
+      active: hostedRoot.widgetUrl !== ""
+      source: hostedRoot.widgetUrl
       onLoaded: hostedRoot.injectProps()
-    }
-
-    function widgetSettings() {
-      var registry = hostedRoot.barInstance && hostedRoot.barInstance.barWidgetRegistry
-      var entry = registry && registry.widgets ? registry.widgets[hostedRoot.widgetId] : null
-      var meta = entry && entry.metadata ? entry.metadata : {}
-      return meta.defaults && typeof meta.defaults === "object" ? meta.defaults : {}
+      onStatusChanged: if (status === Loader.Error)
+        console.warn("vincent.tray failed to load", hostedRoot.widgetId, hostedRoot.widgetUrl)
     }
 
     function injectProps() {
@@ -961,7 +932,7 @@ BarWidget {
       if (!item) return
       if ("bar" in item) item.bar = hostedRoot.barInstance
       if ("moduleName" in item) item.moduleName = hostedRoot.widgetId
-      if ("settings" in item) item.settings = hostedRoot.widgetSettings()
+      if ("settings" in item) item.settings = ({})
       hostedRoot.syncClickable()
     }
 
@@ -979,25 +950,11 @@ BarWidget {
       Qt.callLater(hostedRoot.syncClickable)
     }
 
-    function tryRegister() {
-      if (!hostedRoot.barInstance) return
-      hostedRoot.barInstance.registerModuleSlot(hostedRoot)
-    }
-
-    onBarInstanceChanged: {
-      injectProps()
-      tryRegister()
-    }
-    onRegistryComponentChanged: injectProps()
+    onBarInstanceChanged: injectProps()
     onAcceptInputChanged: syncClickable()
-    Component.onCompleted: tryRegister()
-    Component.onDestruction: {
-      if (hostedRoot.barInstance)
-        hostedRoot.barInstance.unregisterModuleSlot(hostedRoot)
-    }
   }
 
-  // Hidden hosted widgets stay loaded so panel hotkeys still work.
+  // Hidden hosted widgets stay loaded so their panels can still open from IPC.
   Item {
     width: 0
     height: 0

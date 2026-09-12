@@ -67,6 +67,23 @@ function setDescendantClickable(node, on) {
   return count
 }
 
+function hostedWidgetUrl(omarchyPath, id) {
+  var key = String(id || "")
+  var prefix = "omarchy."
+  if (key.indexOf(prefix) !== 0) return ""
+  var name = key.slice(prefix.length)
+  if (!name || name.indexOf(".") !== -1 || name.indexOf("/") !== -1) return ""
+  var base = String(omarchyPath || "/usr/share/omarchy").replace(/\/+$/, "")
+  if (!base) return ""
+  return "file://" + base + "/shell/plugins/panels/" + name + "/Panel.qml"
+}
+
+function hostedPanelIsOpen(bar) {
+  if (!bar || !bar.activePopout) return false
+  if (bar.foreignPopoutMarker && bar.activePopout === bar.foreignPopoutMarker) return false
+  return true
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     itemNamed: itemNamed,
@@ -74,6 +91,8 @@ if (typeof module !== "undefined") {
     layoutHasWidget: layoutHasWidget,
     ownedByOmarchy: ownedByOmarchy,
     drawerAcceptsInput: drawerAcceptsInput,
-    setDescendantClickable: setDescendantClickable
+    setDescendantClickable: setDescendantClickable,
+    hostedWidgetUrl: hostedWidgetUrl,
+    hostedPanelIsOpen: hostedPanelIsOpen
   }
 }

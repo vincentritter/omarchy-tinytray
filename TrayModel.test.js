@@ -115,3 +115,27 @@ test("non-button descendants are left alone", () => {
   TrayModel.setDescendantClickable({ children: [label] }, false)
   assert.equal(label.interactive, true)
 })
+
+test("hosted omarchy panels resolve to first-party Panel.qml urls", () => {
+  assert.equal(
+    TrayModel.hostedWidgetUrl("/usr/share/omarchy", "omarchy.bluetooth"),
+    "file:///usr/share/omarchy/shell/plugins/panels/bluetooth/Panel.qml"
+  )
+  assert.equal(
+    TrayModel.hostedWidgetUrl("/usr/share/omarchy/", "omarchy.network"),
+    "file:///usr/share/omarchy/shell/plugins/panels/network/Panel.qml"
+  )
+})
+
+test("hosted widget urls ignore unknown or non-omarchy ids", () => {
+  assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", "vincent.tray"), "")
+  assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", ""), "")
+  assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", "omarchy"), "")
+})
+
+test("hosted panel open ignores a foreign popout on the plugin bar facade", () => {
+  const foreign = { foreign: true }
+  assert.equal(TrayModel.hostedPanelIsOpen({ activePopout: null, foreignPopoutMarker: foreign }), false)
+  assert.equal(TrayModel.hostedPanelIsOpen({ activePopout: foreign, foreignPopoutMarker: foreign }), false)
+  assert.equal(TrayModel.hostedPanelIsOpen({ activePopout: { opened: true }, foreignPopoutMarker: foreign }), true)
+})
