@@ -15,6 +15,7 @@ BarWidget {
   property bool expanded: false
   property bool managePopupOpen: false
   property bool settingsOpen: false
+  property bool pendingSettingsOpen: false
   property bool trayMenuOpen: false
   property var activeTrayItem: null
   property var activeTrayAnchor: null
@@ -339,17 +340,22 @@ BarWidget {
     Qt.callLater(root.reconcileHostedBarWidgets)
   }
   function showSettings(open) {
-    settingsOpen = !!open
-    if (manageFlick) manageFlick.contentY = 0
+    var next = open === true
+    if (settingsOpen === next || pageFlip.running) return
+    pendingSettingsOpen = next
+    pageFlip.restart()
   }
 
   onManagePopupOpenChanged: {
     if (!managePopupOpen) {
-      root.settingsOpen = false
+      pageFlip.stop()
+      cardRotation.angle = 0
+      pendingSettingsOpen = false
+      settingsOpen = false
       return
     }
     root.rescanCatalog()
-    root.showSettings(false)
+    if (manageFlick) manageFlick.contentY = 0
   }
 
   Behavior on revealProgress {
@@ -558,11 +564,48 @@ BarWidget {
     open: root.managePopupOpen
     contentWidth: managePopup.fittedContentWidth(Style.space(320))
     contentHeight: managePopup.fittedContentHeight(
-      root.settingsOpen
-        ? settingsPage.implicitHeight
-        : manageHeader.implicitHeight + Style.space(8) + manageColumn.implicitHeight,
+      manageHeader.implicitHeight + Style.space(8) + manageColumn.implicitHeight,
       Style.space(480)
     )
+
+    SequentialAnimation {
+      id: pageFlip
+      NumberAnimation {
+        target: cardRotation
+        property: "angle"
+        from: 0
+        to: 90
+        duration: 130
+        easing.type: Easing.InQuad
+      }
+      ScriptAction {
+        script: {
+          root.settingsOpen = root.pendingSettingsOpen
+          cardRotation.angle = -90
+          if (manageFlick) manageFlick.contentY = 0
+        }
+      }
+      NumberAnimation {
+        target: cardRotation
+        property: "angle"
+        from: -90
+        to: 0
+        duration: 170
+        easing.type: Easing.OutQuad
+      }
+    }
+
+    Item {
+      id: pageCard
+      anchors.fill: parent
+      transform: Rotation {
+        id: cardRotation
+        origin.x: pageCard.width / 2
+        origin.y: pageCard.height / 2
+        axis.x: 0
+        axis.y: 1
+        axis.z: 0
+      }
 
     Item {
       id: managePage
@@ -816,21 +859,20 @@ BarWidget {
       Text {
         id: credit
         width: parent.width
-        text: "Built by <a href=\"https://vincentritter.com\">Vincent Ritter</a>"
-        textFormat: Text.RichText
+        text: "Built by Vincent Ritter"
         color: Qt.darker(root.foreground, 1.4)
-        linkColor: Qt.darker(root.foreground, 1.4)
         font.family: root.fontFamily
         font.pixelSize: Style.font.caption
         wrapMode: Text.WordWrap
-        onLinkActivated: function(link) { Util.execArgv(["xdg-open", link]) }
 
         MouseArea {
           anchors.fill: parent
-          acceptedButtons: Qt.NoButton
-          cursorShape: credit.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: Util.execArgv(["xdg-open", "https://vincentritter.com"])
         }
       }
+    }
     }
   }
 
