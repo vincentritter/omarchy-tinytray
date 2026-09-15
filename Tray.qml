@@ -10,7 +10,7 @@ import "TrayModel.js" as TrayModel
 
 BarWidget {
   id: root
-  moduleName: "vincent.tray"
+  moduleName: "vincentritter.tinytray"
 
   property bool expanded: false
   property bool managePopupOpen: false
@@ -21,7 +21,7 @@ BarWidget {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var pinnedIds: settings.pinned instanceof Array ? settings.pinned : []
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
-  readonly property var defaultExtraWidgets: ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor", "omarchy.dropbox", "omarchy.tailscale"]
+  readonly property var defaultExtraWidgets: TrayModel.defaultExtraWidgetIds()
   property var extraWidgetOverride: null
   readonly property var extraWidgetIds: extraWidgetOverride !== null
     ? extraWidgetOverride
@@ -33,7 +33,7 @@ BarWidget {
     var _c = widgetCatalog
     var _e = extraWidgetIds
     var layout = root.bar && root.bar.layoutConfig ? root.bar.layoutConfig : null
-    return TrayModel.catalogRows(_c, _e, layout)
+    return TrayModel.catalogRows(_c, _e, layout, root.moduleName)
   }
   readonly property var hostedWidgetIds: TrayModel.hostedIds(extraWidgetIds, root.bar ? root.bar.layoutConfig : null)
   readonly property var hostedPinnedIds: TrayModel.hostedIdsIn(hostedWidgetIds, pinnedIds, hiddenIds, "pinned")
@@ -205,7 +205,7 @@ BarWidget {
 
   function persistTrayState(pinned, hidden, extras) {
     if (!root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return
-    var id = root.moduleName || "vincent.tray"
+    var id = root.moduleName || "vincentritter.tinytray"
     root.bar.shell.updateEntryInline(id, {
       id: id,
       pinned: pinned,
@@ -239,7 +239,7 @@ BarWidget {
     var ids = extraWidgetIds
     for (var i = 0; i < ids.length; i++) {
       var id = String(ids[i] || "")
-      if (!id || id === "vincent.tray") continue
+      if (!id || id === root.moduleName) continue
       if (TrayModel.layoutHasWidget(layout, id)) root.setBarWidgetEnabled(id, false)
     }
   }
@@ -311,7 +311,7 @@ BarWidget {
   Process {
     id: barWidgetCtl
     onExited: function(code) {
-      if (code !== 0) console.warn("vincent.tray bar widget toggle failed", code, barWidgetCtl.command)
+      if (code !== 0) console.warn("tinytray bar widget toggle failed", code, barWidgetCtl.command)
       Qt.callLater(root.runBarWidgetQueue)
     }
   }
@@ -329,7 +329,7 @@ BarWidget {
       onStreamFinished: root.applyCatalog(text)
     }
     onExited: function(code) {
-      if (code !== 0) console.warn("vincent.tray catalog scan failed", code, root.catalogScript)
+      if (code !== 0) console.warn("tinytray catalog scan failed", code, root.catalogScript)
     }
   }
 
@@ -562,7 +562,7 @@ BarWidget {
         spacing: Style.space(8)
 
       Text {
-        text: "Tray icons"
+        text: "Tinytray"
         color: root.foreground
         font.family: root.fontFamily
         font.pixelSize: Style.font.body
@@ -570,7 +570,7 @@ BarWidget {
       }
 
       Text {
-        text: "Add moves a widget off the bar into this tray. Remove puts it back. Pinned app icons stay visible. Hidden icons never show."
+        text: "Add hosts a widget in the tray, and takes it off this side of the bar if it is there. Remove puts it back. Widgets on the other side stay there. Pinned app icons stay visible. Hidden icons never show."
         color: Qt.darker(root.foreground, 1.4)
         font.family: root.fontFamily
         font.pixelSize: Style.font.caption
@@ -1034,7 +1034,7 @@ BarWidget {
       source: hostedRoot.widgetUrl
       onLoaded: hostedRoot.injectProps()
       onStatusChanged: if (status === Loader.Error)
-        console.warn("vincent.tray failed to load", hostedRoot.widgetId, hostedRoot.widgetUrl)
+        console.warn("tinytray failed to load", hostedRoot.widgetId, hostedRoot.widgetUrl)
     }
 
     function injectProps() {

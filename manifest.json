@@ -1,10 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "vincent.tray",
-  "name": "My System tray",
+  "id": "vincentritter.tinytray",
+  "name": "Tinytray",
   "version": "1.0.0",
   "author": "Vincent Ritter",
-  "description": "Status notifier items plus chosen bar widgets in the hover drawer",
+  "license": "MIT",
+  "homepage": "https://github.com/vincentritter/omarchy-tinytray",
+  "description": "Status notifier items plus chosen bar widgets in a hover drawer",
   "kinds": [
     "bar-widget"
   ],
@@ -12,10 +14,16 @@
     "barWidget": "Tray.qml"
   },
   "barWidget": {
-    "displayName": "My System tray",
-    "description": "Status notifier items plus chosen bar widgets in the hover drawer",
+    "displayName": "Tinytray",
+    "description": "Status notifier items plus chosen bar widgets in a hover drawer",
     "category": "Status",
-    "allowMultiple": false
+    "aliases": [
+      "tray",
+      "tinytray",
+      "system tray"
+    ],
+    "allowMultiple": false,
+    "defaultSection": "right"
   },
   "omarchy": {
     "clonedFrom": "omarchy.tray"

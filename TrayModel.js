@@ -19,15 +19,22 @@ function entryId(entry) {
 }
 
 function layoutHasWidget(layout, id) {
+  return layoutSectionFor(layout, id) !== ""
+}
+
+function layoutSectionFor(layout, id) {
+  var key = String(id || "")
+  if (!key) return ""
   var sections = ["left", "center", "right"]
   for (var s = 0; s < sections.length; s++) {
-    var entries = layout && layout[sections[s]]
+    var name = sections[s]
+    var entries = layout && layout[name]
     if (!Array.isArray(entries)) continue
     for (var i = 0; i < entries.length; i++) {
-      if (entryId(entries[i]) === id) return true
+      if (entryId(entries[i]) === key) return name
     }
   }
-  return false
+  return ""
 }
 
 // LocalSend's item shows no state, offers only Open and Quit, and its primary
@@ -67,6 +74,10 @@ function setDescendantClickable(node, on) {
   return count
 }
 
+function defaultExtraWidgetIds() {
+  return ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor"]
+}
+
 function extraWidgetIdsFromSettings(settings, fallback) {
   var raw = settings ? settings.extraWidgets : undefined
   if (raw && typeof raw !== "string" && typeof raw.length === "number") {
@@ -74,7 +85,7 @@ function extraWidgetIdsFromSettings(settings, fallback) {
     for (var i = 0; i < raw.length; i++) out.push(raw[i])
     return out
   }
-  return Array.isArray(fallback) ? fallback.slice() : []
+  return Array.isArray(fallback) ? fallback.slice() : defaultExtraWidgetIds()
 }
 
 function toggleId(ids, id) {
@@ -171,22 +182,28 @@ function catalogEntryFromManifest(sourceDir, manifest) {
   }
 }
 
-function catalogRows(entries, extraIds, layout) {
-  var skip = { "vincent.tray": true, "omarchy.tray": true }
+function catalogRows(entries, extraIds, layout, trayId) {
+  var skip = { "vincentritter.tinytray": true, "vincent.tray": true, "omarchy.tray": true }
   var extras = Array.isArray(extraIds) ? extraIds : []
+  var traySection = layoutSectionFor(layout, trayId || "vincentritter.tinytray")
   var rows = []
   var seen = {}
   var list = Array.isArray(entries) ? entries : []
   for (var i = 0; i < list.length; i++) {
     var entry = list[i]
     if (!entry || skip[entry.id] || !entry.url) continue
+    var inTray = extras.indexOf(entry.id) !== -1
+    var section = layoutSectionFor(layout, entry.id)
+    var onBar = section !== ""
+    if (!inTray && traySection === "") continue
+    if (!inTray && onBar && section !== traySection) continue
     seen[entry.id] = true
     rows.push({
       id: entry.id,
       title: String(entry.title || entry.id),
       url: entry.url,
-      inTray: extras.indexOf(entry.id) !== -1,
-      onBar: layoutHasWidget(layout, entry.id)
+      inTray: inTray,
+      onBar: onBar
     })
   }
   for (var j = 0; j < extras.length; j++) {
@@ -239,6 +256,8 @@ if (typeof module !== "undefined") {
     hostedWidgetUrl: hostedWidgetUrl,
     hostedPanelIsOpen: hostedPanelIsOpen,
     extraWidgetIdsFromSettings: extraWidgetIdsFromSettings,
+    defaultExtraWidgetIds: defaultExtraWidgetIds,
+    layoutSectionFor: layoutSectionFor,
     toggleId: toggleId,
     extraWidgetTogglePlan: extraWidgetTogglePlan,
     hostedIds: hostedIds,

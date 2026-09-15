@@ -128,7 +128,7 @@ test("hosted omarchy panels resolve to first-party Panel.qml urls", () => {
 })
 
 test("hosted widget urls ignore unknown or non-omarchy ids", () => {
-  assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", "vincent.tray"), "")
+  assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", "vincentritter.tinytray"), "")
   assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", ""), "")
   assert.equal(TrayModel.hostedWidgetUrl("/usr/share/omarchy", "omarchy"), "")
 })
@@ -150,6 +150,11 @@ test("missing extraWidgets keeps the default list, an empty array means none", (
   )
   const like = { 0: "omarchy.audio", 1: "omarchy.power", length: 2 }
   assert.deepEqual(TrayModel.extraWidgetIdsFromSettings({ extraWidgets: like }, fallback), ["omarchy.audio", "omarchy.power"])
+})
+
+test("default hosted widgets are bluetooth, network, and display", () => {
+  assert.deepEqual(TrayModel.defaultExtraWidgetIds(), ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor"])
+  assert.deepEqual(TrayModel.extraWidgetIdsFromSettings({}), ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor"])
 })
 
 test("toggleId adds a missing widget and removes one that is already listed", () => {
@@ -178,10 +183,10 @@ test("hostedIds skips widgets that are still on the bar", () => {
 })
 
 test("layoutWithoutWidget drops one id and leaves the others", () => {
-  const layout = { right: [{ id: "omarchy.audio" }, { id: "vincent.tray" }] }
+  const layout = { right: [{ id: "omarchy.audio" }, { id: "vincentritter.tinytray" }] }
   const next = TrayModel.layoutWithoutWidget(layout, "omarchy.audio")
   assert.equal(TrayModel.layoutHasWidget(next, "omarchy.audio"), false)
-  assert.equal(TrayModel.layoutHasWidget(next, "vincent.tray"), true)
+  assert.equal(TrayModel.layoutHasWidget(next, "vincentritter.tinytray"), true)
 })
 
 test("catalog entries require a bar-widget manifest and a qml file url", () => {
@@ -205,10 +210,19 @@ test("catalog entries require a bar-widget manifest and a qml file url", () => {
 
 test("catalog rows skip the tray itself and sort by title", () => {
   const rows = TrayModel.catalogRows([
-    { id: "vincent.tray", title: "My System tray", url: "file:///tmp/Tray.qml" },
+    { id: "vincentritter.tinytray", title: "Tinytray", url: "file:///tmp/Tray.qml" },
+    { id: "vincent.tray", title: "My System tray", url: "file:///tmp/old.qml" },
+    { id: "omarchy.tray", title: "System tray", url: "file:///tmp/stock.qml" },
     { id: "omarchy.audio", title: "Audio", url: "file:///tmp/audio.qml" },
     { id: "omarchy.bluetooth", title: "Bluetooth", url: "file:///tmp/bt.qml" }
-  ], ["omarchy.bluetooth"], { right: [{ id: "omarchy.audio" }] })
+  ], ["omarchy.bluetooth"], {
+    right: [
+      { id: "omarchy.audio" },
+      { id: "vincentritter.tinytray" },
+      { id: "vincent.tray" },
+      { id: "omarchy.tray" }
+    ]
+  }, "vincentritter.tinytray")
   assert.equal(rows.length, 2)
   assert.equal(rows[0].id, "omarchy.audio")
   assert.equal(rows[0].onBar, true)
@@ -216,6 +230,34 @@ test("catalog rows skip the tray itself and sort by title", () => {
   assert.equal(rows[1].id, "omarchy.bluetooth")
   assert.equal(rows[1].inTray, true)
   assert.equal(rows[1].onBar, false)
+})
+
+test("catalog rows omit widgets that sit on another side of the bar", () => {
+  const rows = TrayModel.catalogRows([
+    { id: "omarchy.clock", title: "Clock", url: "file:///tmp/clock.qml" },
+    { id: "jankeesvw.herdr", title: "Herdr", url: "file:///tmp/herdr.qml" },
+    { id: "omarchy.audio", title: "Audio", url: "file:///tmp/audio.qml" },
+    { id: "omarchy.bluetooth", title: "Bluetooth", url: "file:///tmp/bt.qml" }
+  ], ["omarchy.bluetooth"], {
+    left: [{ id: "jankeesvw.herdr" }],
+    center: [{ id: "omarchy.clock" }],
+    right: [{ id: "vincentritter.tinytray" }, { id: "omarchy.audio" }]
+  }, "vincentritter.tinytray")
+  assert.deepEqual(rows.map(function (row) { return row.id }), ["omarchy.audio", "omarchy.bluetooth"])
+})
+
+test("catalog rows include off-bar dropbox and tailscale so they can be added", () => {
+  const rows = TrayModel.catalogRows([
+    { id: "omarchy.dropbox", title: "Dropbox", url: "file:///tmp/dropbox.qml" },
+    { id: "omarchy.tailscale", title: "Tailscale", url: "file:///tmp/ts.qml" },
+    { id: "omarchy.clock", title: "Clock", url: "file:///tmp/clock.qml" }
+  ], [], {
+    center: [{ id: "omarchy.clock" }],
+    right: [{ id: "vincentritter.tinytray" }]
+  }, "vincentritter.tinytray")
+  assert.deepEqual(rows.map(function (row) { return row.id }), ["omarchy.dropbox", "omarchy.tailscale"])
+  assert.equal(rows[0].onBar, false)
+  assert.equal(rows[0].inTray, false)
 })
 
 test("catalog rows keep extraWidgets that the scan missed so they can be removed", () => {

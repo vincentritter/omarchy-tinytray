@@ -1,45 +1,45 @@
-# vincent.tray
+# Tinytray
 
-An Omarchy bar tray that keeps Status Notifier apps in a hover drawer and can host other bar widgets next to them. Right-click the chevron to add or remove those widgets. Pin an app icon to keep it on the bar. Hide one to take it off the bar.
+Tinytray is an Omarchy bar tray. Status Notifier apps sit in a hover drawer, and other bar widgets can sit next to them instead of taking a permanent slot on the right.
 
-This is a clone of `omarchy.tray`. Stock Omarchy only draws tray apps such as 1Password. Extra icons are bar widgets, so they live on the right of the bar unless this plugin hosts them. If `extraWidgets` is missing from the layout entry, the tray starts with Bluetooth, Network, Display, Dropbox, and Tailscale. An empty list means none.
+Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Display are bar widgets, so they live on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those widgets in the drawer. Pin an app icon to keep it visible. Hide one to take it off the bar.
+
+![Tinytray on the Omarchy bar](preview.png)
 
 ## Install
 
-The repository is private. Add it over SSH:
-
 ```bash
-omarchy plugin add git@github.com:vincentritter/omarchy-tray.git --enable
+omarchy plugin add https://github.com/vincentritter/omarchy-tinytray.git --enable
 ```
 
-Take the hosted widgets off the bar so the tray can hold them:
-
-```bash
-omarchy plugin disable omarchy.bluetooth
-omarchy plugin disable omarchy.network
-omarchy plugin disable omarchy.monitor
-omarchy plugin disable omarchy.dropbox
-omarchy plugin disable omarchy.tailscale
-```
-
-Audio and Power stay on the bar.
+Enabling Tinytray swaps the built-in tray for it. Bluetooth, Network, and Display move into the drawer on first run. Audio and Power stay on the bar. Right-click the chevron to add or remove other widgets, including Dropbox and Tailscale.
 
 ## Use
 
-Hover the chevron to open the drawer. Right-click the chevron to add or remove bar widgets, or to pin and hide app icons. Pinned icons stay visible. Hidden icons leave the bar and can be shown again from that menu.
+Hover the chevron to open the drawer. Right-click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu.
 
-The hosted list is `extraWidgets` on the `vincent.tray` layout entry in `~/.config/omarchy/shell.json`. Add takes a widget off the bar so the tray can show it. Remove puts it back on the bar.
+The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Add hosts a widget in the tray and takes it off this side of the bar if it is there. Remove puts it back.
 
 LocalSend is filtered out on purpose. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is hosted, so you do not get two Dropbox marks.
+
+The hosted list is `extraWidgets` on the `vincentritter.tinytray` layout entry in `~/.config/omarchy/shell.json`. If the key is missing, Bluetooth, Network, and Display are hosted. An empty list means none.
+
+## Update
+
+```bash
+omarchy plugin update vincentritter.tinytray --yes
+```
+
+## Remove
+
+```bash
+omarchy plugin remove vincentritter.tinytray --yes
+```
+
+Removal restores the built-in tray.
 
 ## Tests
 
 ```bash
 node --test TrayModel.test.js
-```
-
-## Update
-
-```bash
-omarchy plugin update vincent.tray --yes
 ```
