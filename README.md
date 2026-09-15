@@ -4,7 +4,7 @@ Tinytray is an Omarchy bar tray. Status Notifier apps sit in a hover drawer, and
 
 Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Display are bar widgets, so they live on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those widgets in the drawer. Pin an app icon to keep it visible. Hide one to take it off the bar.
 
-![Tinytray drawer and manage menu](preview.png)
+![Tinytray manage menu](preview.png)
 
 ## Install
 
@@ -16,9 +16,15 @@ Enabling Tinytray swaps the built-in tray for it. Bluetooth, Network, and Displa
 
 ## Use
 
-Hover the chevron to open the drawer. Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu.
+Hover the chevron to open the drawer.
 
-The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Switching a widget on hosts it in the tray and takes it off this side of the bar if it is there. Switching it off puts it back.
+![Tinytray drawer](screenshots/drawer.png)
+
+Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu. The gear opens a short settings page.
+
+![Tinytray settings](screenshots/settings.png)
+
+The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Switching a widget on hosts it in the tray and takes it off this side of the bar if it is there. Switching it off puts it back. Widgets that are installed but missing from the layout are marked not on the bar.
 
 LocalSend is filtered out on purpose. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is hosted, so you do not get two Dropbox marks.
 
