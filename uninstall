@@ -1,0 +1,17 @@
+#!/bin/bash
+# Remove Tinytray, then put hosted bar widgets back. Omarchy will not run this itself.
+
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")" && pwd)
+shell="${HOME}/.config/omarchy/shell.json"
+id="vincentritter.tinytray"
+restore=$(mktemp)
+hosted=$(mktemp)
+trap 'rm -f "$restore" "$hosted"' EXIT
+cp "$root/restore-hosted.py" "$restore"
+python3 "$root/restore-hosted.py" --print-hosted "$shell" "$id" > "$hosted"
+mapfile -t ids < "$hosted"
+
+omarchy plugin remove "$id" --yes
+python3 "$restore" "$shell" "$id" "${ids[@]}"

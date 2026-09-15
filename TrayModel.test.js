@@ -1,6 +1,25 @@
 const test = require("node:test")
 const assert = require("node:assert/strict")
+const { spawnSync } = require("node:child_process")
+const fs = require("node:fs")
+const os = require("node:os")
+const path = require("node:path")
 const TrayModel = require("./TrayModel.js")
+const restoreScript = path.join(__dirname, "restore-hosted.py")
+
+function writeShell(layout) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tinytray-"))
+  const file = path.join(dir, "shell.json")
+  fs.writeFileSync(file, JSON.stringify({ bar: { layout } }))
+  return file
+}
+
+function dryRestore(shell, tray, ids, extraFlags) {
+  const flags = extraFlags || []
+  return spawnSync("python3", [restoreScript].concat(flags, ["--dry-run", shell, tray], ids), {
+    encoding: "utf8"
+  })
+}
 
 function clickable(target) {
   return !!(
@@ -277,4 +296,82 @@ test("hosted widget url prefers a catalog entry over the omarchy panel conventio
     TrayModel.hostedWidgetUrl("/usr/share/omarchy", "omarchy.bluetooth", catalog),
     "file:///usr/share/omarchy/shell/plugins/panels/bluetooth/Panel.qml"
   )
+})
+
+test("restore script no-ops while the tray is still in shell.json", () => {
+  const shell = writeShell({
+    right: [{ id: "vincentritter.tinytray" }, { id: "omarchy.audio" }]
+  })
+  const result = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth"])
+  assert.equal(result.status, 0)
+  assert.equal(result.stdout, "")
+})
+
+test("restore script re-enables hosted widgets before audio", () => {
+  const shell = writeShell({
+    right: [{ id: "omarchy.tray" }, { id: "omarchy.audio" }]
+  })
+  const result = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth", "omarchy.network"])
+  assert.equal(result.status, 0)
+  assert.equal(
+    result.stdout,
+    "omarchy plugin enable omarchy.bluetooth --before omarchy.audio\n" +
+      "omarchy plugin enable omarchy.network --before omarchy.audio\n"
+  )
+})
+
+test("restore script skips widgets already on the bar and uses the right section without audio", () => {
+  const shell = writeShell({
+    right: [{ id: "omarchy.tray" }, { id: "omarchy.bluetooth" }]
+  })
+  const result = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth", "omarchy.dropbox"])
+  assert.equal(result.status, 0)
+  assert.equal(result.stdout, "omarchy plugin enable omarchy.dropbox --section right\n")
+})
+
+test("restore --force re-enables hosted widgets while Tinytray is still in the layout", () => {
+  const shell = writeShell({
+    right: [{ id: "vincentritter.tinytray" }, { id: "omarchy.audio" }]
+  })
+  const skipped = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth"])
+  assert.equal(skipped.status, 0)
+  assert.equal(skipped.stdout, "")
+  const forced = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth"], ["--force"])
+  assert.equal(forced.status, 0)
+  assert.equal(forced.stdout, "omarchy plugin enable omarchy.bluetooth --before omarchy.audio\n")
+})
+
+test("print-hosted uses defaults when extraWidgets is missing and none when it is empty", () => {
+  const missing = writeShell({
+    right: [{ id: "vincentritter.tinytray" }]
+  })
+  const missingOut = spawnSync("python3", [restoreScript, "--print-hosted", missing, "vincentritter.tinytray"], {
+    encoding: "utf8"
+  })
+  assert.equal(missingOut.status, 0)
+  assert.equal(missingOut.stdout, "omarchy.bluetooth\nomarchy.network\nomarchy.monitor\n")
+
+  const empty = writeShell({
+    right: [{ id: "vincentritter.tinytray", extraWidgets: [] }]
+  })
+  const emptyOut = spawnSync("python3", [restoreScript, "--print-hosted", empty, "vincentritter.tinytray"], {
+    encoding: "utf8"
+  })
+  assert.equal(emptyOut.status, 0)
+  assert.equal(emptyOut.stdout, "")
+
+  const listed = writeShell({
+    right: [{ id: "vincentritter.tinytray", extraWidgets: ["omarchy.dropbox"] }]
+  })
+  const listedOut = spawnSync("python3", [restoreScript, "--print-hosted", listed, "vincentritter.tinytray"], {
+    encoding: "utf8"
+  })
+  assert.equal(listedOut.status, 0)
+  assert.equal(listedOut.stdout, "omarchy.dropbox\n")
+
+  const absent = writeShell({ right: [{ id: "omarchy.tray" }] })
+  const absentOut = spawnSync("python3", [restoreScript, "--print-hosted", absent, "vincentritter.tinytray"], {
+    encoding: "utf8"
+  })
+  assert.equal(absentOut.status, 1)
 })
