@@ -358,6 +358,33 @@ BarWidget {
     if (manageFlick) manageFlick.contentY = 0
   }
 
+  SequentialAnimation {
+    id: pageFlip
+    NumberAnimation {
+      target: cardRotation
+      property: "angle"
+      from: 0
+      to: 90
+      duration: 130
+      easing.type: Easing.InQuad
+    }
+    ScriptAction {
+      script: {
+        root.settingsOpen = root.pendingSettingsOpen
+        cardRotation.angle = -90
+        if (manageFlick) manageFlick.contentY = 0
+      }
+    }
+    NumberAnimation {
+      target: cardRotation
+      property: "angle"
+      from: -90
+      to: 0
+      duration: 170
+      easing.type: Easing.OutQuad
+    }
+  }
+
   Behavior on revealProgress {
     NumberAnimation { duration: root.animationDuration; easing.type: Easing.OutCubic }
   }
@@ -567,33 +594,6 @@ BarWidget {
       manageHeader.implicitHeight + Style.space(8) + manageColumn.implicitHeight,
       Style.space(480)
     )
-
-    SequentialAnimation {
-      id: pageFlip
-      NumberAnimation {
-        target: cardRotation
-        property: "angle"
-        from: 0
-        to: 90
-        duration: 130
-        easing.type: Easing.InQuad
-      }
-      ScriptAction {
-        script: {
-          root.settingsOpen = root.pendingSettingsOpen
-          cardRotation.angle = -90
-          if (manageFlick) manageFlick.contentY = 0
-        }
-      }
-      NumberAnimation {
-        target: cardRotation
-        property: "angle"
-        from: -90
-        to: 0
-        duration: 170
-        easing.type: Easing.OutQuad
-      }
-    }
 
     Item {
       id: pageCard
