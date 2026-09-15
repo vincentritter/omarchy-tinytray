@@ -6,6 +6,8 @@ Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Di
 
 ![Tinytray manage menu](preview.png)
 
+![Tinytray settings](screenshots/settings.png)
+
 ## Install
 
 ```bash
@@ -21,8 +23,6 @@ Hover the chevron to open the drawer.
 ![Tinytray drawer](screenshots/drawer.png)
 
 Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu. The gear opens a short settings page, including the chevron mark on the bar.
-
-![Tinytray settings](screenshots/settings.png)
 
 The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Switching a widget on hosts it in the tray and takes it off this side of the bar if it is there. Switching it off puts it back. Widgets that are installed but missing from the layout are marked not on the bar.
 
