@@ -667,15 +667,6 @@ BarWidget {
         spacing: Style.space(8)
 
       Text {
-        text: "Add hosts a widget in the tray, and takes it off this side of the bar if it is there. Remove puts it back. Widgets on the other side stay there. Pinned app icons stay visible. Hidden icons never show."
-        color: Qt.darker(root.foreground, 1.4)
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
-        wrapMode: Text.WordWrap
-        width: parent.width
-      }
-
-      Text {
         visible: root.widgetCatalogRows.length > 0
         text: "Bar widgets"
         color: root.foreground
@@ -854,6 +845,24 @@ BarWidget {
           font.pixelSize: Style.font.body
           font.bold: true
         }
+      }
+
+      Text {
+        width: parent.width
+        text: "Tinytray is a hover drawer for Status Notifier apps and other bar widgets. Add takes a widget off this side of the bar into the tray. Remove puts it back. Widgets on the other side stay there."
+        color: Qt.darker(root.foreground, 1.4)
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WordWrap
+      }
+
+      Text {
+        width: parent.width
+        text: "Pin keeps an app icon on the bar. Hide takes it off; it comes back from this menu."
+        color: Qt.darker(root.foreground, 1.4)
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WordWrap
       }
 
       Text {
