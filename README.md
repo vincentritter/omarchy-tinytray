@@ -1,8 +1,8 @@
 # Tinytray
 
-Tinytray is an Omarchy bar tray. Status Notifier apps sit in a hover drawer, and other bar widgets can sit next to them instead of taking a permanent slot on the right.
+Tinytray is a hover drawer for the Omarchy bar. App icons such as 1Password sit in the drawer, and other bar widgets can sit next to them instead of taking a permanent slot on the right.
 
-Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Display are bar widgets, so they live on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those widgets in the drawer. Pin an app icon to keep it visible. Hide one to take it off the bar.
+Stock Omarchy only draws tray apps. Bluetooth, Network, and Display are bar widgets, so they stay on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those three in the drawer on first run. Pin an app icon to keep it visible. Hide one to take it off the bar.
 
 ![Tinytray manage menu](preview.png)
 
@@ -14,7 +14,7 @@ Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Di
 omarchy plugin add https://github.com/vincentritter/omarchy-tinytray.git --enable
 ```
 
-Enabling Tinytray swaps the built-in tray for it. Bluetooth, Network, and Display move into the drawer on first run. Audio and Power stay on the bar. Click the chevron to add or remove other widgets, including Dropbox and Tailscale.
+Enabling Tinytray swaps the built-in tray for it. Audio and Power stay on the bar. Dropbox, Tailscale, and other widgets on this side can move into the drawer from the manage menu.
 
 ## Use
 
@@ -22,9 +22,9 @@ Hover the chevron to open the drawer.
 
 ![Tinytray drawer](screenshots/drawer.png)
 
-Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu. The gear opens a short settings page, including the chevron mark on the bar.
+Click the chevron to host or return bar widgets, and to pin or hide app icons. Hidden icons come back from that same menu. The gear opens settings, including which chevron to show.
 
-The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Switching a widget on hosts it in the tray and takes it off this side of the bar if it is there. Switching it off puts it back. Widgets that are installed but missing from the layout are marked not on the bar.
+The menu lists widgets on this side of the bar, and installed widgets that are not on the bar. It does not take anything off the other side. A switch on hosts the widget in the tray and removes it from this side. A switch off puts it back. Widgets that are installed but missing from the layout are marked not on the bar.
 
 LocalSend is filtered out on purpose. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is hosted, so you do not get two Dropbox marks.
 
