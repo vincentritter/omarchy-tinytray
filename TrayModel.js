@@ -248,7 +248,7 @@ function hostedPanelIsOpen(bar) {
 function widgetStatusText(inTray, onBar) {
   if (inTray) return "In the tray"
   if (onBar) return "On the bar"
-  return "Off the bar"
+  return "Not on the bar"
 }
 
 function appStatusText(isPinned, isHidden) {

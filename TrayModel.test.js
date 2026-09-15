@@ -380,7 +380,7 @@ test("widget status names tray vs bar", () => {
   assert.equal(TrayModel.widgetStatusText(true, false), "In the tray")
   assert.equal(TrayModel.widgetStatusText(true, true), "In the tray")
   assert.equal(TrayModel.widgetStatusText(false, true), "On the bar")
-  assert.equal(TrayModel.widgetStatusText(false, false), "Off the bar")
+  assert.equal(TrayModel.widgetStatusText(false, false), "Not on the bar")
 })
 
 test("app status prefers hidden over pinned", () => {
