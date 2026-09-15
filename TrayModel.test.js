@@ -375,3 +375,33 @@ test("print-hosted uses defaults when extraWidgets is missing and none when it i
   })
   assert.equal(absentOut.status, 1)
 })
+
+test("widget status names tray vs bar", () => {
+  assert.equal(TrayModel.widgetStatusText(true, false), "In the tray")
+  assert.equal(TrayModel.widgetStatusText(true, true), "In the tray")
+  assert.equal(TrayModel.widgetStatusText(false, true), "On the bar")
+  assert.equal(TrayModel.widgetStatusText(false, false), "Off the bar")
+})
+
+test("app status prefers hidden over pinned", () => {
+  assert.equal(TrayModel.appStatusText(false, true), "Hidden")
+  assert.equal(TrayModel.appStatusText(true, true), "Hidden")
+  assert.equal(TrayModel.appStatusText(true, false), "Pinned")
+  assert.equal(TrayModel.appStatusText(false, false), "In the drawer")
+})
+
+test("hero meta summarizes pinned and drawer counts", () => {
+  assert.equal(TrayModel.heroMeta(0, 0), "Empty drawer")
+  assert.equal(TrayModel.heroMeta(1, 0), "1 in the drawer")
+  assert.equal(TrayModel.heroMeta(3, 0), "3 in the drawer")
+  assert.equal(TrayModel.heroMeta(0, 1), "1 pinned")
+  assert.equal(TrayModel.heroMeta(2, 1), "1 pinned · 2 in the drawer")
+  assert.equal(TrayModel.heroMeta(1, 2), "2 pinned · 1 in the drawer")
+})
+
+test("item display name prefers title, then tooltip, then the last path segment", () => {
+  assert.equal(TrayModel.itemDisplayName({ title: "1Password" }), "1Password")
+  assert.equal(TrayModel.itemDisplayName({ title: "  ", tooltipTitle: "Dropbox" }), "Dropbox")
+  assert.equal(TrayModel.itemDisplayName({ id: "org.kde.StatusNotifierItem/123" }), "123")
+  assert.equal(TrayModel.itemDisplayName({}), "Unknown")
+})

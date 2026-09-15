@@ -20,6 +20,7 @@ BarWidget {
   property var activeTrayItem: null
   property var activeTrayAnchor: null
   readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var pinnedIds: settings.pinned instanceof Array ? settings.pinned : []
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
@@ -47,6 +48,8 @@ BarWidget {
   readonly property var manageItems: allItems
   readonly property bool hasDrawer: allItems.length > 0 || hostedWidgetIds.length > 0
   readonly property int drawerCount: drawerItems.length + hostedDrawerIds.length
+  readonly property int pinnedCount: pinnedItems.length + hostedPinnedIds.length
+  readonly property string heroStatusText: TrayModel.heroMeta(drawerCount, pinnedCount)
   readonly property int trayItemExtent: Style.bar.iconSlot
   readonly property int trayItemGap: 0
   readonly property int trayJoinGap: 0
@@ -440,8 +443,10 @@ BarWidget {
           height: implicitHeight
           x: root.drawerExtent - root.revealExtent
           text: "\uf053"
+          tooltipText: "Manage Tinytray"
           onPressed: function(button) {
-            if (button === Qt.RightButton) root.managePopupOpen = !root.managePopupOpen
+            if (button === Qt.LeftButton || button === Qt.RightButton)
+              root.managePopupOpen = !root.managePopupOpen
           }
         }
 
@@ -532,8 +537,10 @@ BarWidget {
           y: root.drawerExtent - root.revealExtent
           text: "\uf053"
           textRotation: 90
+          tooltipText: "Manage Tinytray"
           onPressed: function(button) {
-            if (button === Qt.RightButton) root.managePopupOpen = !root.managePopupOpen
+            if (button === Qt.LeftButton || button === Qt.RightButton)
+              root.managePopupOpen = !root.managePopupOpen
           }
         }
 
@@ -589,10 +596,12 @@ BarWidget {
     owner: root
     bar: root.bar
     open: root.managePopupOpen
-    contentWidth: managePopup.fittedContentWidth(Style.space(320))
+    contentWidth: managePopup.fittedContentWidth(Style.space(380))
     contentHeight: managePopup.fittedContentHeight(
-      manageHeader.implicitHeight + Style.space(8) + manageColumn.implicitHeight,
-      Style.space(480)
+      root.settingsOpen
+        ? settingsHeader.implicitHeight + settingsBody.implicitHeight + Style.space(24)
+        : manageHeader.implicitHeight + manageColumn.implicitHeight + Style.space(12),
+      Style.space(600)
     )
 
     Item {
@@ -607,281 +616,217 @@ BarWidget {
         axis.z: 0
       }
 
-    Item {
-      id: managePage
-      visible: !root.settingsOpen
-      anchors.fill: parent
-
-    Column {
-      id: manageHeader
-      width: parent.width
-      spacing: Style.space(8)
-
       Item {
-        width: parent.width
-        implicitHeight: Math.max(manageTitle.implicitHeight, settingsButton.implicitHeight)
+        id: managePage
+        visible: !root.settingsOpen
+        anchors.fill: parent
 
-        Text {
-          id: manageTitle
-          anchors.left: parent.left
-          anchors.right: settingsButton.left
-          anchors.rightMargin: Style.space(8)
-          anchors.verticalCenter: parent.verticalCenter
-          text: "Tinytray"
-          color: root.foreground
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.body
-          font.bold: true
+        Column {
+          id: manageHeader
+          width: parent.width
+          spacing: Style.space(12)
+
+          Item {
+            id: manageHero
+            width: parent.width
+            implicitHeight: manageHeroCard.implicitHeight
+            function openSettings() { root.showSettings(true) }
+
+            PanelHero {
+              id: manageHeroCard
+              width: parent.width
+              title: "Tinytray"
+              meta: root.heroStatusText
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              iconComponent: Component {
+                Text {
+                  textFormat: Text.PlainText
+                  text: "\uf01c"
+                  color: manageHeroCard.foreground
+                  font.family: manageHeroCard.fontFamily
+                  font.pixelSize: Style.font.display
+                }
+              }
+              trailingControl: Component {
+                PanelActionButton {
+                  iconText: "󰒓"
+                  tooltipText: "Tinytray settings"
+                  foreground: manageHeroCard.foreground
+                  fontFamily: manageHeroCard.fontFamily
+                  onClicked: manageHero.openSettings()
+                }
+              }
+            }
+          }
+
+          PanelSeparator {
+            foreground: root.foreground
+          }
         }
 
-        PanelActionButton {
-          id: settingsButton
+        Flickable {
+          id: manageFlick
+          anchors.top: manageHeader.bottom
+          anchors.topMargin: Style.space(12)
+          anchors.left: parent.left
           anchors.right: parent.right
-          anchors.verticalCenter: parent.verticalCenter
-          iconText: "󰒓"
-          tooltipText: "Tinytray settings"
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          onClicked: root.showSettings(true)
+          anchors.bottom: parent.bottom
+          contentWidth: width
+          contentHeight: manageColumn.implicitHeight
+          clip: true
+          boundsBehavior: Flickable.StopAtBounds
+          interactive: contentHeight > height
+          flickableDirection: Flickable.VerticalFlick
+          ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+          Column {
+            id: manageColumn
+            width: manageFlick.width
+            spacing: Style.space(12)
+
+            Text {
+              visible: root.manageItems.length === 0 && root.widgetCatalogRows.length === 0
+              width: parent.width
+              text: "Nothing to manage."
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.body
+              horizontalAlignment: Text.AlignHCenter
+              topPadding: Style.space(16)
+              bottomPadding: Style.space(18)
+            }
+
+            Column {
+              visible: root.manageItems.length > 0
+              width: parent.width
+              spacing: Style.space(8)
+
+              PanelSectionHeader {
+                text: "APP ICONS"
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+              }
+
+              Repeater {
+                model: root.manageItems
+                ManageAppRow {
+                  width: manageColumn.width
+                }
+              }
+            }
+
+            PanelSeparator {
+              visible: root.widgetCatalogRows.length > 0 && root.manageItems.length > 0
+              foreground: root.foreground
+            }
+
+            Column {
+              visible: root.widgetCatalogRows.length > 0
+              width: parent.width
+              spacing: Style.space(8)
+
+              PanelSectionHeader {
+                text: "BAR WIDGETS"
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+              }
+
+              Repeater {
+                model: root.widgetCatalogRows
+                ManageWidgetRow {
+                  width: manageColumn.width
+                }
+              }
+            }
+          }
         }
       }
-    }
-
-    Flickable {
-      id: manageFlick
-      anchors.top: manageHeader.bottom
-      anchors.topMargin: Style.space(8)
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      contentWidth: width
-      contentHeight: manageColumn.implicitHeight
-      clip: true
-      boundsBehavior: Flickable.StopAtBounds
-      interactive: contentHeight > height
-      flickableDirection: Flickable.VerticalFlick
 
       Column {
-        id: manageColumn
-        width: manageFlick.width
-        spacing: Style.space(8)
+        id: settingsPage
+        visible: root.settingsOpen
+        width: parent.width
+        spacing: Style.space(12)
 
-      Text {
-        visible: root.widgetCatalogRows.length > 0
-        text: "Bar widgets"
-        color: root.foreground
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.bodySmall
-        font.bold: true
-      }
+        Column {
+          id: settingsHeader
+          width: parent.width
+          spacing: Style.space(12)
 
-      Repeater {
-        model: root.widgetCatalogRows
-        delegate: Item {
-          id: extraRow
-          required property var modelData
-          required property int index
-          width: manageColumn.width
-          implicitHeight: 28
+          Item {
+            width: parent.width
+            implicitHeight: Math.max(settingsBackButton.implicitHeight, settingsLabels.implicitHeight)
 
-          readonly property string itemId: String(modelData.id || "")
-          readonly property bool inTray: extraRow.modelData.inTray === true
-          readonly property bool onBar: extraRow.modelData.onBar === true
+            PanelActionButton {
+              id: settingsBackButton
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              iconText: "󰁍"
+              tooltipText: "Back"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: root.showSettings(false)
+            }
 
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: parent.left
-            anchors.right: extraAddBtn.left
-            anchors.rightMargin: Style.space(8)
-            text: extraRow.modelData.title + (extraRow.onBar ? " (on the bar)" : "")
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-            elide: Text.ElideRight
+            Column {
+              id: settingsLabels
+              anchors.left: settingsBackButton.right
+              anchors.leftMargin: Style.space(10)
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: Style.space(3)
+
+              Text {
+                textFormat: Text.PlainText
+                text: "SETTINGS"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.title
+                font.bold: true
+              }
+            }
           }
 
-          Button {
-            id: extraAddBtn
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.right: parent.right
-            text: extraRow.inTray ? "Remove" : "Add"
+          PanelSeparator {
             foreground: root.foreground
-            horizontalPadding: 8
-            verticalPadding: 3
-            fontSize: Style.font.bodySmall
-            onClicked: root.toggleExtraWidget(extraRow.itemId)
           }
         }
-      }
 
-      Text {
-        visible: root.manageItems.length === 0 && root.widgetCatalogRows.length === 0
-        text: "No tray items reporting."
-        color: Qt.darker(root.foreground, 1.5)
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.bodySmall
-        font.italic: true
-      }
+        Column {
+          id: settingsBody
+          width: parent.width
+          spacing: Style.space(16)
 
-      Text {
-        visible: root.manageItems.length > 0
-        text: "App icons"
-        color: root.foreground
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.bodySmall
-        font.bold: true
-      }
-
-      Repeater {
-        model: root.manageItems
-        delegate: Item {
-          id: rowRoot
-          required property var modelData
-          required property int index
-          width: manageColumn.width
-          implicitHeight: 28
-
-          readonly property string itemId: String(modelData.id || "")
-          readonly property string displayName: {
-            var t = String(modelData.title || "").trim()
-            if (t) return t
-            var tt = String(modelData.tooltipTitle || "").trim()
-            if (tt) return tt
-            var id = String(modelData.id || "")
-            var slash = id.lastIndexOf("/")
-            return slash !== -1 ? id.substring(slash + 1) : (id || "Unknown")
-          }
-          readonly property bool isPinned: root.pinnedIds.indexOf(itemId) !== -1
-          readonly property bool isHidden: root.hiddenIds.indexOf(itemId) !== -1
-          readonly property bool hasIcon: String(modelData.icon || "") !== ""
-
-          TrayIcon {
-            id: rowIcon
-            visible: rowRoot.hasIcon
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: parent.left
-            width: 16
-            height: 16
-            icon: rowRoot.modelData.icon
+          Text {
+            width: parent.width
+            text: "A widget in the tray leaves this side of the bar. Pin keeps an app icon visible. Hide takes it off until you bring it back."
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.WordWrap
           }
 
           Text {
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: parent.left
-            anchors.leftMargin: rowRoot.hasIcon ? Style.space(26) : 0
-            anchors.right: rowHideBtn.left
-            anchors.rightMargin: Style.space(8)
-            text: rowRoot.displayName
-            color: root.foreground
+            id: credit
+            width: parent.width
+            text: "BUILT BY VINCENT RITTER"
+            color: creditMouse.containsMouse ? root.foreground : root.dim
             font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-            elide: Text.ElideRight
-          }
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            font.letterSpacing: 1.2
 
-          Button {
-            id: rowPinBtn
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.right: parent.right
-            iconText: "\uf08d"
-            text: rowRoot.isPinned ? "Unpin" : "Pin"
-            foreground: root.foreground
-            horizontalPadding: 8
-            verticalPadding: 3
-            iconSize: Style.font.bodySmall
-            fontSize: Style.font.bodySmall
-            onClicked: root.togglePin(rowRoot.itemId)
-          }
-
-          Button {
-            id: rowHideBtn
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.right: rowPinBtn.left
-            anchors.rightMargin: Style.space(6)
-            iconText: "\uf06e"
-            text: rowRoot.isHidden ? "Show" : "Hide"
-            foreground: root.foreground
-            horizontalPadding: 8
-            verticalPadding: 3
-            iconSize: Style.font.bodySmall
-            fontSize: Style.font.bodySmall
-            onClicked: root.toggleHide(rowRoot.itemId)
+            MouseArea {
+              id: creditMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: Util.execArgv(["xdg-open", "https://vincentritter.com"])
+            }
           }
         }
       }
-      }
-    }
-    }
-
-    Column {
-      id: settingsPage
-      visible: root.settingsOpen
-      width: parent.width
-      spacing: Style.space(12)
-
-      Item {
-        width: parent.width
-        implicitHeight: Math.max(settingsBackButton.implicitHeight, settingsTitle.implicitHeight)
-
-        PanelActionButton {
-          id: settingsBackButton
-          anchors.left: parent.left
-          anchors.verticalCenter: parent.verticalCenter
-          iconText: "󰁍"
-          tooltipText: "Back"
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          onClicked: root.showSettings(false)
-        }
-
-        Text {
-          id: settingsTitle
-          anchors.left: settingsBackButton.right
-          anchors.leftMargin: Style.space(10)
-          anchors.right: parent.right
-          anchors.verticalCenter: parent.verticalCenter
-          text: "Settings"
-          color: root.foreground
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.body
-          font.bold: true
-        }
-      }
-
-      Text {
-        width: parent.width
-        text: "Tinytray is a hover drawer for Status Notifier apps and other bar widgets. Add takes a widget off this side of the bar into the tray. Remove puts it back. Widgets on the other side stay there."
-        color: Qt.darker(root.foreground, 1.4)
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
-        wrapMode: Text.WordWrap
-      }
-
-      Text {
-        width: parent.width
-        text: "Pin keeps an app icon on the bar. Hide takes it off; it comes back from this menu."
-        color: Qt.darker(root.foreground, 1.4)
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
-        wrapMode: Text.WordWrap
-      }
-
-      Text {
-        id: credit
-        width: parent.width
-        text: "Built by Vincent Ritter"
-        color: Qt.darker(root.foreground, 1.4)
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
-        wrapMode: Text.WordWrap
-
-        MouseArea {
-          anchors.fill: parent
-          hoverEnabled: true
-          cursorShape: Qt.PointingHandCursor
-          onClicked: Util.execArgv(["xdg-open", "https://vincentritter.com"])
-        }
-      }
-    }
     }
   }
 
@@ -1129,6 +1074,184 @@ BarWidget {
             }
           }
         }
+      }
+    }
+  }
+
+  component ManageWidgetRow: CursorSurface {
+    id: widgetRow
+
+    required property var modelData
+    required property int index
+
+    readonly property string itemId: String(modelData.id || "")
+    readonly property bool inTray: modelData.inTray === true
+    readonly property bool onBar: modelData.onBar === true
+
+    implicitHeight: widgetRowContent.implicitHeight + Style.spacing.rowPaddingX
+    foreground: root.foreground
+    hasCursor: widgetMouse.containsMouse
+
+    MouseArea {
+      id: widgetMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: root.toggleExtraWidget(widgetRow.itemId)
+    }
+
+    PanelToolTip {
+      visible: widgetMouse.containsMouse
+      text: widgetRow.inTray ? "Return to the bar" : "Move to the tray"
+      fontFamily: root.fontFamily
+    }
+
+    Item {
+      id: widgetRowContent
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.leftMargin: Style.space(10)
+      anchors.rightMargin: Style.space(10)
+      implicitHeight: Math.max(widgetInfo.implicitHeight, widgetSwitch.implicitHeight)
+
+      Column {
+        id: widgetInfo
+        anchors.left: parent.left
+        anchors.right: widgetSwitch.left
+        anchors.rightMargin: Style.space(8)
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Style.space(1)
+
+        Text {
+          width: parent.width
+          textFormat: Text.PlainText
+          text: String(widgetRow.modelData.title || widgetRow.itemId)
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body
+          elide: Text.ElideRight
+        }
+
+        Text {
+          width: parent.width
+          textFormat: Text.PlainText
+          text: TrayModel.widgetStatusText(widgetRow.inTray, widgetRow.onBar)
+          color: root.dim
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+        }
+      }
+
+      ToggleSwitch {
+        id: widgetSwitch
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        checked: widgetRow.inTray
+        interactive: false
+        foreground: root.foreground
+      }
+    }
+  }
+
+  component ManageAppRow: CursorSurface {
+    id: appRow
+
+    required property var modelData
+    required property int index
+
+    readonly property string itemId: String(modelData.id || "")
+    readonly property string displayName: TrayModel.itemDisplayName(modelData)
+    readonly property bool isPinned: root.pinnedIds.indexOf(itemId) !== -1
+    readonly property bool isHidden: root.hiddenIds.indexOf(itemId) !== -1
+    readonly property bool hasIcon: String(modelData.icon || "") !== ""
+
+    implicitHeight: appRowContent.implicitHeight + Style.spacing.rowPaddingX
+    foreground: root.foreground
+    property bool actionHot: false
+    hasCursor: appMouse.containsMouse || actionHot
+    current: isPinned && !isHidden
+    opacity: isHidden ? 0.55 : 1
+
+    MouseArea {
+      id: appMouse
+      anchors.fill: parent
+      hoverEnabled: true
+    }
+
+    Item {
+      id: appRowContent
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.leftMargin: Style.space(10)
+      anchors.rightMargin: Style.space(10)
+      implicitHeight: Math.max(appIcon.height, appInfo.implicitHeight, appPinBtn.implicitHeight)
+
+      TrayIcon {
+        id: appIcon
+        visible: appRow.hasIcon
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: Style.space(16)
+        height: Style.space(16)
+        icon: appRow.modelData.icon
+      }
+
+      Column {
+        id: appInfo
+        anchors.left: parent.left
+        anchors.leftMargin: appRow.hasIcon ? Style.space(26) : 0
+        anchors.right: appHideBtn.left
+        anchors.rightMargin: Style.space(8)
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Style.space(1)
+
+        Text {
+          width: parent.width
+          textFormat: Text.PlainText
+          text: appRow.displayName
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body
+          elide: Text.ElideRight
+        }
+
+        Text {
+          width: parent.width
+          textFormat: Text.PlainText
+          text: TrayModel.appStatusText(appRow.isPinned, appRow.isHidden)
+          color: appRow.isPinned && !appRow.isHidden ? Color.accent : root.dim
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+        }
+      }
+
+      PanelActionButton {
+        id: appHideBtn
+        anchors.right: appPinBtn.left
+        anchors.rightMargin: Style.space(2)
+        anchors.verticalCenter: parent.verticalCenter
+        iconText: appRow.isHidden ? "󰈈" : "󰈉"
+        tooltipText: appRow.isHidden ? "Show" : "Hide"
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        onHovered: function(on) { appRow.actionHot = on }
+        onClicked: root.toggleHide(appRow.itemId)
+      }
+
+      PanelActionButton {
+        id: appPinBtn
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        iconText: appRow.isPinned ? "󰐃" : "󰤱"
+        tooltipText: appRow.isPinned ? "Unpin" : "Pin"
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        onHovered: function(on) { appRow.actionHot = on }
+        onClicked: root.togglePin(appRow.itemId)
       }
     }
   }

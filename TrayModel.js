@@ -245,6 +245,39 @@ function hostedPanelIsOpen(bar) {
   return true
 }
 
+function widgetStatusText(inTray, onBar) {
+  if (inTray) return "In the tray"
+  if (onBar) return "On the bar"
+  return "Off the bar"
+}
+
+function appStatusText(isPinned, isHidden) {
+  if (isHidden) return "Hidden"
+  if (isPinned) return "Pinned"
+  return "In the drawer"
+}
+
+function heroMeta(drawerCount, pinnedCount) {
+  var drawer = Number(drawerCount) || 0
+  var pinned = Number(pinnedCount) || 0
+  var parts = []
+  if (pinned > 0) parts.push(pinned + " pinned")
+  if (drawer > 0) parts.push(drawer + " in the drawer")
+  if (parts.length === 0) return "Empty drawer"
+  return parts.join(" · ")
+}
+
+function itemDisplayName(item) {
+  if (!item) return "Unknown"
+  var title = String(item.title || "").trim()
+  if (title) return title
+  var tooltip = String(item.tooltipTitle || "").trim()
+  if (tooltip) return tooltip
+  var id = String(item.id || "")
+  var slash = id.lastIndexOf("/")
+  return slash !== -1 ? id.substring(slash + 1) : (id || "Unknown")
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     itemNamed: itemNamed,
@@ -264,6 +297,10 @@ if (typeof module !== "undefined") {
     hostedIdsIn: hostedIdsIn,
     layoutWithoutWidget: layoutWithoutWidget,
     catalogEntryFromManifest: catalogEntryFromManifest,
-    catalogRows: catalogRows
+    catalogRows: catalogRows,
+    widgetStatusText: widgetStatusText,
+    appStatusText: appStatusText,
+    heroMeta: heroMeta,
+    itemDisplayName: itemDisplayName
   }
 }

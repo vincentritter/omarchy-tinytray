@@ -12,13 +12,13 @@ Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Di
 omarchy plugin add https://github.com/vincentritter/omarchy-tinytray.git --enable
 ```
 
-Enabling Tinytray swaps the built-in tray for it. Bluetooth, Network, and Display move into the drawer on first run. Audio and Power stay on the bar. Right-click the chevron to add or remove other widgets, including Dropbox and Tailscale.
+Enabling Tinytray swaps the built-in tray for it. Bluetooth, Network, and Display move into the drawer on first run. Audio and Power stay on the bar. Click the chevron to add or remove other widgets, including Dropbox and Tailscale.
 
 ## Use
 
-Hover the chevron to open the drawer. Right-click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu.
+Hover the chevron to open the drawer. Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu.
 
-The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Add hosts a widget in the tray and takes it off this side of the bar if it is there. Remove puts it back.
+The menu offers widgets on the same side of the bar as the tray, and widgets that are not on the bar. It does not pull anything off the other side. Switching a widget on hosts it in the tray and takes it off this side of the bar if it is there. Switching it off puts it back.
 
 LocalSend is filtered out on purpose. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is hosted, so you do not get two Dropbox marks.
 
