@@ -720,6 +720,26 @@ BarWidget {
           }
         }
       }
+
+      Text {
+        id: credit
+        width: parent.width
+        topPadding: Style.space(8)
+        text: "Designed & built by <a href=\"https://vincentritter.com\">Vincent Ritter</a> · <a href=\"https://github.com/vincentritter/omarchy-tinytray\">Source</a>"
+        textFormat: Text.RichText
+        color: Qt.darker(root.foreground, 1.4)
+        linkColor: Qt.darker(root.foreground, 1.4)
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WordWrap
+        onLinkActivated: function(link) { Util.execArgv(["xdg-open", link]) }
+
+        MouseArea {
+          anchors.fill: parent
+          acceptedButtons: Qt.NoButton
+          cursorShape: credit.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+        }
+      }
       }
     }
   }
