@@ -20,7 +20,7 @@ Hover the chevron to open the drawer.
 
 ![Tinytray drawer](screenshots/drawer.png)
 
-Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu. The gear opens a short settings page.
+Click it to add or remove bar widgets, or to pin and hide app icons. Hidden icons come back from that same menu. The gear opens a short settings page, including the chevron mark on the bar.
 
 ![Tinytray settings](screenshots/settings.png)
 
@@ -28,7 +28,7 @@ The menu offers widgets on the same side of the bar as the tray, and widgets tha
 
 LocalSend is filtered out on purpose. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is hosted, so you do not get two Dropbox marks.
 
-The hosted list is `extraWidgets` on the `vincentritter.tinytray` layout entry in `~/.config/omarchy/shell.json`. If the key is missing, Bluetooth, Network, and Display are hosted. An empty list means none.
+The hosted list is `extraWidgets` on the `vincentritter.tinytray` layout entry in `~/.config/omarchy/shell.json`. If the key is missing, Bluetooth, Network, and Display are hosted. An empty list means none. `chevron` is `chevron`, `caret`, `angle`, `arrow`, `double`, or `dot`.
 
 ## Update
 

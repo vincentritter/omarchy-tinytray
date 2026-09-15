@@ -278,6 +278,51 @@ function itemDisplayName(item) {
   return slash !== -1 ? id.substring(slash + 1) : (id || "Unknown")
 }
 
+function chevronOptions() {
+  return [
+    { value: "chevron", label: "Chevron", glyph: "\uf053" },
+    { value: "caret", label: "Caret", glyph: "\uf0d9" },
+    { value: "angle", label: "Angle", glyph: "\uf104" },
+    { value: "arrow", label: "Arrow", glyph: "\uf060" },
+    { value: "double", label: "Double", glyph: "\uf100" },
+    { value: "dot", label: "Dot", glyph: "\ueb8a" }
+  ]
+}
+
+function chevronGlyph(id) {
+  var key = String(id || "chevron")
+  var options = chevronOptions()
+  for (var i = 0; i < options.length; i++) {
+    if (options[i].value === key) return options[i].glyph
+  }
+  return options[0].glyph
+}
+
+function chevronIdFromSettings(settings) {
+  var id = settings && typeof settings.chevron === "string" ? settings.chevron : "chevron"
+  var options = chevronOptions()
+  for (var i = 0; i < options.length; i++) {
+    if (options[i].value === id) return id
+  }
+  return "chevron"
+}
+
+function mergeSettings(settings, moduleName, values) {
+  var entry = { id: String(moduleName || "") }
+  if (settings && typeof settings === "object") {
+    for (var existing in settings) {
+      if (existing !== "id") entry[existing] = settings[existing]
+    }
+  }
+  if (values && typeof values === "object") {
+    for (var key in values) {
+      if (values[key] === undefined) delete entry[key]
+      else entry[key] = values[key]
+    }
+  }
+  return entry
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     itemNamed: itemNamed,
@@ -301,6 +346,10 @@ if (typeof module !== "undefined") {
     widgetStatusText: widgetStatusText,
     appStatusText: appStatusText,
     heroMeta: heroMeta,
-    itemDisplayName: itemDisplayName
+    itemDisplayName: itemDisplayName,
+    chevronOptions: chevronOptions,
+    chevronGlyph: chevronGlyph,
+    chevronIdFromSettings: chevronIdFromSettings,
+    mergeSettings: mergeSettings
   }
 }

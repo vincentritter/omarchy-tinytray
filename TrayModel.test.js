@@ -405,3 +405,45 @@ test("item display name prefers title, then tooltip, then the last path segment"
   assert.equal(TrayModel.itemDisplayName({ id: "org.kde.StatusNotifierItem/123" }), "123")
   assert.equal(TrayModel.itemDisplayName({}), "Unknown")
 })
+
+test("chevron id falls back to chevron for missing or unknown values", () => {
+  assert.equal(TrayModel.chevronIdFromSettings({}), "chevron")
+  assert.equal(TrayModel.chevronIdFromSettings({ chevron: "caret" }), "caret")
+  assert.equal(TrayModel.chevronIdFromSettings({ chevron: "dot" }), "dot")
+  assert.equal(TrayModel.chevronIdFromSettings({ chevron: "nope" }), "chevron")
+  assert.equal(TrayModel.chevronIdFromSettings(null), "chevron")
+})
+
+test("chevron glyph maps known ids and defaults to the chevron mark", () => {
+  assert.equal(TrayModel.chevronGlyph("chevron"), "\uf053")
+  assert.equal(TrayModel.chevronGlyph("caret"), "\uf0d9")
+  assert.equal(TrayModel.chevronGlyph("angle"), "\uf104")
+  assert.equal(TrayModel.chevronGlyph("arrow"), "\uf060")
+  assert.equal(TrayModel.chevronGlyph("double"), "\uf100")
+  assert.equal(TrayModel.chevronGlyph("dot"), "\ueb8a")
+  assert.equal(TrayModel.chevronGlyph("nope"), "\uf053")
+  assert.equal(TrayModel.chevronGlyph(""), "\uf053")
+})
+
+test("mergeSettings keeps existing keys and applies updates", () => {
+  const merged = TrayModel.mergeSettings(
+    { pinned: ["a"], extraWidgets: ["omarchy.bluetooth"], chevron: "caret" },
+    "vincentritter.tinytray",
+    { pinned: ["b"], hidden: [] }
+  )
+  assert.equal(merged.id, "vincentritter.tinytray")
+  assert.deepEqual(merged.pinned, ["b"])
+  assert.deepEqual(merged.hidden, [])
+  assert.equal(merged.chevron, "caret")
+  assert.deepEqual(merged.extraWidgets, ["omarchy.bluetooth"])
+})
+
+test("mergeSettings deletes keys set to undefined", () => {
+  const merged = TrayModel.mergeSettings(
+    { chevron: "arrow", pinned: ["a"] },
+    "vincentritter.tinytray",
+    { chevron: undefined }
+  )
+  assert.equal("chevron" in merged, false)
+  assert.deepEqual(merged.pinned, ["a"])
+})

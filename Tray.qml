@@ -24,6 +24,10 @@ BarWidget {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var pinnedIds: settings.pinned instanceof Array ? settings.pinned : []
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
+  readonly property string chevronId: TrayModel.chevronIdFromSettings(settings)
+  readonly property string chevronGlyph: TrayModel.chevronGlyph(chevronId)
+  readonly property real chevronFontSize: Math.max(1, Math.round(Style.bar.iconFont * 0.85))
+  readonly property var chevronChoices: TrayModel.chevronOptions()
   readonly property var defaultExtraWidgets: TrayModel.defaultExtraWidgetIds()
   property var extraWidgetOverride: null
   readonly property var extraWidgetIds: extraWidgetOverride !== null
@@ -208,15 +212,22 @@ BarWidget {
     return result
   }
 
-  function persistTrayState(pinned, hidden, extras) {
+  function persistTrayState(pinned, hidden, extras, extraValues) {
     if (!root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return
     var id = root.moduleName || "vincentritter.tinytray"
-    root.bar.shell.updateEntryInline(id, {
-      id: id,
-      pinned: pinned,
-      hidden: hidden,
-      extraWidgets: extras !== undefined ? extras : extraWidgetIds
-    })
+    var values = extraValues && typeof extraValues === "object" ? extraValues : {}
+    var next = {}
+    for (var key in values) next[key] = values[key]
+    next.pinned = pinned
+    next.hidden = hidden
+    next.extraWidgets = extras !== undefined ? extras : extraWidgetIds
+    var entry = TrayModel.mergeSettings(root.settings, id, next)
+    root.settings = entry
+    root.bar.shell.updateEntryInline(id, entry)
+  }
+
+  function persistChevron(id) {
+    persistTrayState(pinnedIds.slice(), hiddenIds.slice(), extraWidgetIds, { chevron: TrayModel.chevronIdFromSettings({ chevron: id }) })
   }
 
   property var barWidgetQueue: []
@@ -442,7 +453,8 @@ BarWidget {
           width: implicitWidth
           height: implicitHeight
           x: root.drawerExtent - root.revealExtent
-          text: "\uf053"
+          text: root.chevronGlyph
+          fontSize: root.chevronFontSize
           tooltipText: "Manage Tinytray"
           onPressed: function(button) {
             if (button === Qt.LeftButton || button === Qt.RightButton)
@@ -535,7 +547,8 @@ BarWidget {
           width: implicitWidth
           height: implicitHeight
           y: root.drawerExtent - root.revealExtent
-          text: "\uf053"
+          text: root.chevronGlyph
+          fontSize: root.chevronFontSize
           textRotation: 90
           tooltipText: "Manage Tinytray"
           onPressed: function(button) {
@@ -797,6 +810,40 @@ BarWidget {
           id: settingsBody
           width: parent.width
           spacing: Style.space(16)
+
+          Column {
+            width: parent.width
+            spacing: Style.space(8)
+
+            Text {
+              textFormat: Text.PlainText
+              text: "CHEVRON"
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+            }
+
+            Row {
+              spacing: Style.space(6)
+
+              Repeater {
+                model: root.chevronChoices
+
+                Button {
+                  required property var modelData
+                  iconText: modelData.glyph
+                  selected: root.chevronId === modelData.value
+                  bordered: true
+                  tooltipText: modelData.label
+                  foreground: root.foreground
+                  fontFamily: root.fontFamily
+                  iconSize: Style.font.icon
+                  onClicked: root.persistChevron(modelData.value)
+                }
+              }
+            }
+          }
 
           Text {
             width: parent.width
