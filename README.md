@@ -4,7 +4,7 @@ Tinytray is an Omarchy bar tray. Status Notifier apps sit in a hover drawer, and
 
 Stock Omarchy only draws tray apps such as 1Password. Bluetooth, Network, and Display are bar widgets, so they live on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those widgets in the drawer. Pin an app icon to keep it visible. Hide one to take it off the bar.
 
-![Tinytray on the Omarchy bar](preview.png)
+![Tinytray drawer and manage menu](preview.png)
 
 ## Install
 
