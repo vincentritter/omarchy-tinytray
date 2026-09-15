@@ -10,6 +10,7 @@ restore=$(mktemp)
 hosted=$(mktemp)
 trap 'rm -f "$restore" "$hosted"' EXIT
 cp "$root/restore-hosted.py" "$restore"
+python3 "$root/restore-hosted.py" --install-helper
 python3 "$root/restore-hosted.py" --print-hosted "$shell" "$id" > "$hosted"
 mapfile -t ids < "$hosted"
 

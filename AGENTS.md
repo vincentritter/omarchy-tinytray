@@ -6,7 +6,7 @@ Tinytray is an Omarchy bar plugin. It replaces `omarchy.tray`, hosts chosen bar 
 
 ## Layout
 
-`Tray.qml` is the bar widget. Decisions that can be tested without Quickshell belong in `TrayModel.js`. `TinytrayIcon.qml` draws the manage-hero mark as a `Shape`, not a rasterized SVG. `scan-catalog.py` lists installed bar widgets. `restore-hosted.py` and `uninstall` put hosted widgets back on the bar after Tinytray is removed.
+`Tray.qml` is the bar widget. Decisions that can be tested without Quickshell belong in `TrayModel.js`. `TinytrayIcon.qml` draws the manage-hero mark as a `Shape`, not a rasterized SVG. `scan-catalog.py` lists installed bar widgets. `restore-hosted.py` puts hosted widgets back after Tinytray is removed, after the tray and in hosted order, and strips Tinytray keys off `omarchy.tray`. A copy is installed at `~/.config/omarchy/tinytray-restore` so `omarchy plugin remove` can restore even after the plugin directory is gone.
 
 The live copy Omarchy loads is `~/.config/omarchy/plugins/vincentritter.tinytray`. Copy changed files there and run `omarchy restart shell`. Plugin hot reload of QML is unreliable; a restart is the check that counts.
 

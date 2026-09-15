@@ -40,13 +40,13 @@ omarchy plugin update vincentritter.tinytray --yes
 
 ## Remove
 
-Omarchy will not run plugin uninstall hooks. Use Tinytray’s own script, which removes the plugin (the built-in tray comes back) and then puts hosted widgets back on the bar:
-
 ```bash
-~/.config/omarchy/plugins/vincentritter.tinytray/uninstall
+omarchy plugin remove vincentritter.tinytray --yes
 ```
 
-Hosted widgets return before Audio when it is there, otherwise on the right. `omarchy plugin remove vincentritter.tinytray --yes` only swaps the tray back and leaves hosted widgets off the bar.
+The built-in tray comes back. Hosted widgets return after it, in the order they were hosted. Tinytray’s settings are not left on that tray entry.
+
+If the shell was not running, run `~/.config/omarchy/tinytray-restore`. The copy in the plugin directory still does both steps: `~/.config/omarchy/plugins/vincentritter.tinytray/uninstall`.
 
 ## Tests
 

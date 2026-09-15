@@ -35,6 +35,9 @@ BarWidget {
     : TrayModel.extraWidgetIdsFromSettings(settings, defaultExtraWidgets)
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
   readonly property string catalogScript: String(Qt.resolvedUrl("scan-catalog.py")).replace(/^file:\/\//, "")
+  readonly property string restoreScript: String(Qt.resolvedUrl("restore-hosted.py")).replace(/^file:\/\//, "")
+  readonly property string shellConfigPath: (Quickshell.env("HOME") || "") + "/.config/omarchy/shell.json"
+  readonly property string restoreHelperPath: (Quickshell.env("HOME") || "") + "/.config/omarchy/tinytray-restore"
   property var widgetCatalog: []
   readonly property var widgetCatalogRows: {
     var _c = widgetCatalog
@@ -260,6 +263,26 @@ BarWidget {
     }
   }
 
+  function persistExtraWidgetsIfNeeded() {
+    if (root.settings && root.settings.extraWidgets !== undefined) return
+    persistTrayState(pinnedIds.slice(), hiddenIds.slice(), extraWidgetIds)
+  }
+
+  function restoreHostedAfterUnload() {
+    var ids = extraWidgetIds
+    var cmd = [
+      "bash", "-c",
+      "cp \"$1\" \"$2\" && chmod +x \"$2\"; sleep 0.25; exec python3 \"$2\" \"$3\" \"$4\" \"${@:5}\"",
+      "tinytray-restore",
+      root.restoreScript,
+      root.restoreHelperPath,
+      root.shellConfigPath,
+      root.moduleName
+    ]
+    for (var i = 0; i < ids.length; i++) cmd.push(String(ids[i]))
+    Quickshell.execDetached(cmd)
+  }
+
   function toggleExtraWidget(iid) {
     var onBar = TrayModel.layoutHasWidget(root.bar && root.bar.layoutConfig, iid)
     var plan = TrayModel.extraWidgetTogglePlan(extraWidgetIds, iid, onBar)
@@ -350,9 +373,13 @@ BarWidget {
   }
 
   Component.onCompleted: {
+    Quickshell.execDetached(["python3", root.restoreScript, "--install-helper"])
+    root.persistExtraWidgetsIfNeeded()
     root.rescanCatalog()
     Qt.callLater(root.reconcileHostedBarWidgets)
   }
+  // Omarchy will not run plugin uninstall hooks.
+  Component.onDestruction: root.restoreHostedAfterUnload()
   function showSettings(open) {
     var next = open === true
     if (settingsOpen === next || pageFlip.running) return

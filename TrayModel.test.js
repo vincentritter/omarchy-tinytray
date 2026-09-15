@@ -314,7 +314,7 @@ test("restore script no-ops while the tray is still in shell.json", () => {
   assert.equal(result.stdout, "")
 })
 
-test("restore script re-enables hosted widgets before audio", () => {
+test("restore script re-enables hosted widgets after the tray, in listed order", () => {
   const shell = writeShell({
     right: [{ id: "omarchy.tray" }, { id: "omarchy.audio" }]
   })
@@ -322,21 +322,21 @@ test("restore script re-enables hosted widgets before audio", () => {
   assert.equal(result.status, 0)
   assert.equal(
     result.stdout,
-    "omarchy plugin enable omarchy.bluetooth --before omarchy.audio\n" +
-      "omarchy plugin enable omarchy.network --before omarchy.audio\n"
+    "omarchy plugin enable omarchy.bluetooth --after omarchy.tray\n" +
+      "omarchy plugin enable omarchy.network --after omarchy.bluetooth\n"
   )
 })
 
-test("restore script skips widgets already on the bar and uses the right section without audio", () => {
+test("restore script skips widgets already on the bar and places the rest after the last kept id", () => {
   const shell = writeShell({
     right: [{ id: "omarchy.tray" }, { id: "omarchy.bluetooth" }]
   })
   const result = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth", "omarchy.dropbox"])
   assert.equal(result.status, 0)
-  assert.equal(result.stdout, "omarchy plugin enable omarchy.dropbox --section right\n")
+  assert.equal(result.stdout, "omarchy plugin enable omarchy.dropbox --after omarchy.bluetooth\n")
 })
 
-test("restore --force re-enables hosted widgets while Tinytray is still in the layout", () => {
+test("restore --force re-enables hosted widgets after Tinytray when it is still in the layout", () => {
   const shell = writeShell({
     right: [{ id: "vincentritter.tinytray" }, { id: "omarchy.audio" }]
   })
@@ -345,7 +345,77 @@ test("restore --force re-enables hosted widgets while Tinytray is still in the l
   assert.equal(skipped.stdout, "")
   const forced = dryRestore(shell, "vincentritter.tinytray", ["omarchy.bluetooth"], ["--force"])
   assert.equal(forced.status, 0)
-  assert.equal(forced.stdout, "omarchy plugin enable omarchy.bluetooth --before omarchy.audio\n")
+  assert.equal(forced.stdout, "omarchy plugin enable omarchy.bluetooth --after vincentritter.tinytray\n")
+})
+
+test("restore without ids uses leaked extraWidgets on omarchy.tray", () => {
+  const shell = writeShell({
+    right: [{
+      id: "omarchy.tray",
+      extraWidgets: ["omarchy.bluetooth", "omarchy.network"],
+      chevron: "dot"
+    }]
+  })
+  const result = dryRestore(shell, "vincentritter.tinytray", [])
+  assert.equal(result.status, 0)
+  assert.equal(
+    result.stdout,
+    "omarchy plugin enable omarchy.bluetooth --after omarchy.tray\n" +
+      "omarchy plugin enable omarchy.network --after omarchy.bluetooth\n" +
+      "strip omarchy.tray\n"
+  )
+})
+
+test("restore without ids does not treat a stock omarchy.tray as the default hosted list", () => {
+  const shell = writeShell({
+    right: [{ id: "omarchy.tray" }]
+  })
+  const result = dryRestore(shell, "vincentritter.tinytray", [])
+  assert.equal(result.status, 0)
+  assert.equal(result.stdout, "")
+})
+
+test("restore without ids treats an empty leaked extraWidgets list as none", () => {
+  const shell = writeShell({
+    right: [{ id: "omarchy.tray", extraWidgets: [] }]
+  })
+  const result = dryRestore(shell, "vincentritter.tinytray", [])
+  assert.equal(result.status, 0)
+  assert.equal(result.stdout, "strip omarchy.tray\n")
+})
+
+test("restore strips Tinytray keys off omarchy.tray", () => {
+  const shell = writeShell({
+    right: [{
+      id: "omarchy.tray",
+      extraWidgets: ["omarchy.bluetooth"],
+      chevron: "dot",
+      hidden: [],
+      pinned: [],
+      showPercentage: false
+    }, { id: "omarchy.bluetooth" }]
+  })
+  const result = spawnSync("python3", [restoreScript, shell, "vincentritter.tinytray", "omarchy.bluetooth"], {
+    encoding: "utf8"
+  })
+  assert.equal(result.status, 0)
+  const cfg = JSON.parse(fs.readFileSync(shell, "utf8"))
+  assert.equal(cfg.version, 1)
+  const right = cfg.bar.layout.right
+  assert.deepEqual(right[0], { id: "omarchy.tray", showPercentage: false })
+  assert.equal(right[1].id, "omarchy.bluetooth")
+})
+
+test("restore --install-helper copies a runnable command into config", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "tinytray-home-"))
+  const result = spawnSync("python3", [restoreScript, "--install-helper"], {
+    encoding: "utf8",
+    env: { ...process.env, HOME: home }
+  })
+  assert.equal(result.status, 0)
+  const helper = path.join(home, ".config/omarchy/tinytray-restore")
+  assert.equal(fs.existsSync(helper), true)
+  assert.equal(fs.statSync(helper).mode & 0o111, 0o111)
 })
 
 test("print-hosted uses defaults when extraWidgets is missing and none when it is empty", () => {
