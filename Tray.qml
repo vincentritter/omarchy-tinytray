@@ -14,6 +14,7 @@ BarWidget {
 
   property bool expanded: false
   property bool managePopupOpen: false
+  property bool settingsOpen: false
   property bool trayMenuOpen: false
   property var activeTrayItem: null
   property var activeTrayAnchor: null
@@ -337,7 +338,19 @@ BarWidget {
     root.rescanCatalog()
     Qt.callLater(root.reconcileHostedBarWidgets)
   }
-  onManagePopupOpenChanged: if (managePopupOpen) root.rescanCatalog()
+  function showSettings(open) {
+    settingsOpen = !!open
+    if (manageFlick) manageFlick.contentY = 0
+  }
+
+  onManagePopupOpenChanged: {
+    if (!managePopupOpen) {
+      root.settingsOpen = false
+      return
+    }
+    root.rescanCatalog()
+    root.showSettings(false)
+  }
 
   Behavior on revealProgress {
     NumberAnimation { duration: root.animationDuration; easing.type: Easing.OutCubic }
@@ -544,11 +557,60 @@ BarWidget {
     bar: root.bar
     open: root.managePopupOpen
     contentWidth: managePopup.fittedContentWidth(Style.space(320))
-    contentHeight: managePopup.fittedContentHeight(manageFlick.contentHeight, Style.space(480))
+    contentHeight: managePopup.fittedContentHeight(
+      root.settingsOpen
+        ? settingsPage.implicitHeight
+        : manageHeader.implicitHeight + Style.space(8) + manageColumn.implicitHeight,
+      Style.space(480)
+    )
+
+    Item {
+      id: managePage
+      visible: !root.settingsOpen
+      anchors.fill: parent
+
+    Column {
+      id: manageHeader
+      width: parent.width
+      spacing: Style.space(8)
+
+      Item {
+        width: parent.width
+        implicitHeight: Math.max(manageTitle.implicitHeight, settingsButton.implicitHeight)
+
+        Text {
+          id: manageTitle
+          anchors.left: parent.left
+          anchors.right: settingsButton.left
+          anchors.rightMargin: Style.space(8)
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Tinytray"
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body
+          font.bold: true
+        }
+
+        PanelActionButton {
+          id: settingsButton
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          iconText: "󰒓"
+          tooltipText: "Tinytray settings"
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          onClicked: root.showSettings(true)
+        }
+      }
+    }
 
     Flickable {
       id: manageFlick
-      anchors.fill: parent
+      anchors.top: manageHeader.bottom
+      anchors.topMargin: Style.space(8)
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
       contentWidth: width
       contentHeight: manageColumn.implicitHeight
       clip: true
@@ -560,14 +622,6 @@ BarWidget {
         id: manageColumn
         width: manageFlick.width
         spacing: Style.space(8)
-
-      Text {
-        text: "Tinytray"
-        color: root.foreground
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.body
-        font.bold: true
-      }
 
       Text {
         text: "Add hosts a widget in the tray, and takes it off this side of the bar if it is there. Remove puts it back. Widgets on the other side stay there. Pinned app icons stay visible. Hidden icons never show."
@@ -720,12 +774,49 @@ BarWidget {
           }
         }
       }
+      }
+    }
+    }
+
+    Column {
+      id: settingsPage
+      visible: root.settingsOpen
+      width: parent.width
+      spacing: Style.space(12)
+
+      Item {
+        width: parent.width
+        implicitHeight: Math.max(settingsBackButton.implicitHeight, settingsTitle.implicitHeight)
+
+        PanelActionButton {
+          id: settingsBackButton
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          iconText: "󰁍"
+          tooltipText: "Back"
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          onClicked: root.showSettings(false)
+        }
+
+        Text {
+          id: settingsTitle
+          anchors.left: settingsBackButton.right
+          anchors.leftMargin: Style.space(10)
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Settings"
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body
+          font.bold: true
+        }
+      }
 
       Text {
         id: credit
         width: parent.width
-        topPadding: Style.space(8)
-        text: "Designed & built by <a href=\"https://vincentritter.com\">Vincent Ritter</a> · <a href=\"https://github.com/vincentritter/omarchy-tinytray\">Source</a>"
+        text: "Built by <a href=\"https://vincentritter.com\">Vincent Ritter</a>"
         textFormat: Text.RichText
         color: Qt.darker(root.foreground, 1.4)
         linkColor: Qt.darker(root.foreground, 1.4)
@@ -739,7 +830,6 @@ BarWidget {
           acceptedButtons: Qt.NoButton
           cursorShape: credit.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
         }
-      }
       }
     }
   }
