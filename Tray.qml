@@ -807,22 +807,21 @@ BarWidget {
             wrapMode: Text.WordWrap
           }
 
-          Text {
-            id: credit
+          Column {
             width: parent.width
-            text: "BUILT BY VINCENT RITTER"
-            color: creditMouse.containsMouse ? root.foreground : root.dim
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
-            font.bold: true
-            font.letterSpacing: 1.2
+            spacing: Style.space(8)
 
-            MouseArea {
-              id: creditMouse
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: Util.execArgv(["xdg-open", "https://vincentritter.com"])
+            SettingsCreditLine {
+              prefix: "BUILT BY "
+              linkText: "VINCENT RITTER"
+              url: "https://vincentritter.com"
+              tracking: 1.2
+            }
+
+            SettingsCreditLine {
+              prefix: "View this plugin on "
+              linkText: "GitHub"
+              url: "https://github.com/vincentritter/omarchy-tinytray"
             }
           }
         }
@@ -1075,6 +1074,54 @@ BarWidget {
           }
         }
       }
+    }
+  }
+
+  component SettingsCreditLine: Row {
+    property string prefix: ""
+    property string linkText: ""
+    property string url: ""
+    property real tracking: 0
+
+    spacing: 0
+
+    Text {
+      textFormat: Text.PlainText
+      text: prefix
+      color: root.dim
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+      font.bold: true
+      font.letterSpacing: tracking
+    }
+
+    SettingsLink {
+      text: linkText
+      url: url
+      tracking: tracking
+    }
+  }
+
+  component SettingsLink: Text {
+    id: settingsLink
+
+    property string url: ""
+    property real tracking: 0
+
+    color: settingsLinkMouse.containsMouse ? root.foreground : root.dim
+    font.family: root.fontFamily
+    font.pixelSize: Style.font.caption
+    font.bold: true
+    font.underline: true
+    font.letterSpacing: tracking
+    textFormat: Text.PlainText
+
+    MouseArea {
+      id: settingsLinkMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: if (settingsLink.url !== "") Util.execArgv(["xdg-open", settingsLink.url])
     }
   }
 
