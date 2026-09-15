@@ -653,12 +653,9 @@ BarWidget {
               foreground: root.foreground
               fontFamily: root.fontFamily
               iconComponent: Component {
-                Text {
-                  textFormat: Text.PlainText
-                  text: "\uf01c"
+                TinytrayIcon {
+                  iconSize: Style.font.display
                   color: manageHeroCard.foreground
-                  font.family: manageHeroCard.fontFamily
-                  font.pixelSize: Style.font.display
                 }
               }
               trailingControl: Component {

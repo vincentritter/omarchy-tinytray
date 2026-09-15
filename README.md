@@ -1,5 +1,7 @@
 # Tinytray
 
+<img src="logo.svg" width="64" height="64" alt="">
+
 Tinytray is a hover drawer for the Omarchy bar. App icons such as 1Password sit in the drawer, and other bar widgets can sit next to them instead of taking a permanent slot on the right.
 
 Stock Omarchy only draws tray apps. Bluetooth, Network, and Display are bar widgets, so they stay on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those three in the drawer on first run. Pin an app icon to keep it visible. Hide one to take it off the bar.
