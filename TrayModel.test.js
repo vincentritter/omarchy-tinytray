@@ -194,6 +194,13 @@ test("adding a bar widget takes it off the bar so the tray can host it", () => {
   assert.equal(remove.setBarEnabled, true)
 })
 
+test("adding an off-bar widget does not disable it on the bar", () => {
+  const add = TrayModel.extraWidgetTogglePlan(["omarchy.bluetooth"], "jankeesvw.herdr", false)
+  assert.deepEqual(add.extras, ["omarchy.bluetooth", "jankeesvw.herdr"])
+  assert.equal(add.adding, true)
+  assert.equal(add.setBarEnabled, null)
+})
+
 test("hostedIds skips widgets that are still on the bar", () => {
   assert.deepEqual(
     TrayModel.hostedIds(["omarchy.audio", "omarchy.bluetooth"], { right: [{ id: "omarchy.audio" }] }),
