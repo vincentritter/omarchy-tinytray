@@ -18,7 +18,7 @@ Enabling Tinytray swaps the built-in tray for it. Audio and Power stay on the ba
 
 ## Use
 
-Hover the chevron to open the drawer. Click it to host or return bar widgets, and to pin or hide app icons. Hidden icons come back from that same menu.
+Hover the chevron to open the drawer. These shots use the dot. Click it to host or return bar widgets, and to pin or hide app icons. Hidden icons come back from that same menu.
 
 ![Tinytray manage menu](preview.png)
 
