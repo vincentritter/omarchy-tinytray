@@ -1149,6 +1149,8 @@ BarWidget {
   }
 
   component SettingsCreditLine: Row {
+    id: creditLine
+
     property string prefix: ""
     property string linkText: ""
     property string url: ""
@@ -1158,18 +1160,18 @@ BarWidget {
 
     Text {
       textFormat: Text.PlainText
-      text: prefix
+      text: creditLine.prefix
       color: root.dim
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
       font.bold: true
-      font.letterSpacing: tracking
+      font.letterSpacing: creditLine.tracking
     }
 
     SettingsLink {
-      text: linkText
-      url: url
-      tracking: tracking
+      text: creditLine.linkText
+      url: creditLine.url
+      tracking: creditLine.tracking
     }
   }
 
