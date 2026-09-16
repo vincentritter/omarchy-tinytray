@@ -6,7 +6,7 @@
   "author": "Vincent Ritter",
   "license": "MIT",
   "homepage": "https://github.com/vincentritter/omarchy-tinytray",
-  "description": "Status notifier items plus chosen bar widgets in a hover drawer",
+  "description": "App icons and chosen bar widgets in a hover drawer",
   "kinds": [
     "bar-widget"
   ],
@@ -15,7 +15,7 @@
   },
   "barWidget": {
     "displayName": "Tinytray",
-    "description": "Status notifier items plus chosen bar widgets in a hover drawer",
+    "description": "App icons and chosen bar widgets in a hover drawer",
     "category": "Status",
     "aliases": [
       "tray",

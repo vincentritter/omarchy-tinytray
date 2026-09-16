@@ -16,7 +16,7 @@ The live copy Omarchy loads is `~/.config/omarchy/plugins/vincentritter.tinytray
 node --test TrayModel.test.js
 ```
 
-A new decision (catalog membership, hosting, persist merge, status copy, chevron ids) belongs in `TrayModel.js` with a test that fails if that decision flips. QML is not unit-tested. Prove UI by using it in the running shell.
+A new decision (catalog membership, hosting, persist merge, status copy, chevron ids, which app icons are filtered) belongs in `TrayModel.js` with a test that fails if that decision flips. QML is not unit-tested. Prove UI by using it in the running shell.
 
 Hosting something that is already on this side of the bar must disable that bar copy (`setBarEnabled: false`). Hosting something that is not on the bar must not (`setBarEnabled: null`). Pin, hide, and extra-widget writes must go through `mergeSettings` so they do not drop `chevron` or other keys.
 

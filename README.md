@@ -6,9 +6,7 @@ Tinytray is an opinionated hover drawer for the Omarchy bar. App icons such as 1
 
 Stock Omarchy only draws tray apps. Bluetooth, Network, and Display are bar widgets, so they stay on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those three in the drawer on first run. Pin an app icon to keep it visible. Hide one to take it off the bar.
 
-![Tinytray manage menu](preview.png)
-
-![Tinytray settings](screenshots/settings.png)
+![Tinytray drawer](screenshots/drawer.png)
 
 ## Install
 
@@ -16,21 +14,21 @@ Stock Omarchy only draws tray apps. Bluetooth, Network, and Display are bar widg
 omarchy plugin add https://github.com/vincentritter/omarchy-tinytray.git --enable
 ```
 
-Enabling Tinytray swaps the built-in tray for it. Audio and Power stay on the bar. Dropbox, Tailscale, and other widgets on this side can move into the drawer from the manage menu.
+Enabling Tinytray swaps the built-in tray for it. Audio and Power stay on the bar unless you host them. Dropbox, Tailscale, and other widgets on this side can move into the drawer from the manage menu.
 
 ## Use
 
-Hover the chevron to open the drawer.
+Hover the chevron to open the drawer. Click it to host or return bar widgets, and to pin or hide app icons. Hidden icons come back from that same menu.
 
-![Tinytray drawer](screenshots/drawer.png)
-
-Click the chevron to host or return bar widgets, and to pin or hide app icons. Hidden icons come back from that same menu. The gear opens settings, including which chevron to show.
+![Tinytray manage menu](preview.png)
 
 The menu lists widgets on this side of the bar, and installed widgets that are not on the bar. It does not take anything off the other side. A switch on hosts the widget in the tray and removes it from this side. A switch off puts it back. Widgets that are installed but missing from the layout are marked not on the bar.
 
-LocalSend is filtered out on purpose. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is hosted, so you do not get two Dropbox marks.
+LocalSend is left out. Its tray item has no state, its click does nothing, and it picks a new id every launch, so hiding it by hand would not stick. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is on the bar or in the drawer, so you do not get two Dropbox marks.
 
-The hosted list is `extraWidgets` on the `vincentritter.tinytray` layout entry in `~/.config/omarchy/shell.json`. If the key is missing, Bluetooth, Network, and Display are hosted. An empty list means none. `chevron` is `chevron`, `caret`, `angle`, `arrow`, `double`, or `dot`.
+The gear opens settings, including which chevron to show.
+
+![Tinytray settings](screenshots/settings.png)
 
 ## Update
 
@@ -47,11 +45,5 @@ omarchy plugin remove vincentritter.tinytray --yes
 The built-in tray comes back. Hosted widgets return after it, in the order they were hosted. Tinytray’s settings are not left on that tray entry.
 
 If the shell was not running, run `~/.config/omarchy/tinytray-restore`. The copy in the plugin directory still does both steps: `~/.config/omarchy/plugins/vincentritter.tinytray/uninstall`.
-
-## Tests
-
-```bash
-node --test TrayModel.test.js
-```
 
 Built by [Vincent Ritter](https://vincentritter.com).

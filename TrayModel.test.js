@@ -476,6 +476,27 @@ test("hero meta summarizes pinned and drawer counts", () => {
   assert.equal(TrayModel.heroMeta(1, 2), "2 pinned · 1 in the drawer")
 })
 
+test("LocalSend tray items are treated as owned by Omarchy", () => {
+  assert.equal(TrayModel.ownedByOmarchy({ id: "fresh-id-every-launch", title: "LocalSend" }, {}, []), true)
+  assert.equal(TrayModel.ownedByOmarchy({ id: "another-fresh-id", tooltipTitle: "LocalSend" }, {}, []), true)
+})
+
+test("Dropbox native tray icon is owned when the Omarchy widget is on the bar or hosted", () => {
+  const item = { id: "dropbox-client", title: "Dropbox" }
+  assert.equal(TrayModel.ownedByOmarchy(item, {}, ["omarchy.dropbox"]), true)
+  assert.equal(TrayModel.ownedByOmarchy(item, { right: [{ id: "omarchy.dropbox" }] }, []), true)
+})
+
+test("Dropbox native tray icon is left alone when the Omarchy widget is not hosted", () => {
+  const item = { id: "dropbox-client", title: "Dropbox" }
+  assert.equal(TrayModel.ownedByOmarchy(item, {}, TrayModel.defaultExtraWidgetIds()), false)
+})
+
+test("ordinary app icons are not owned by Omarchy", () => {
+  const item = { id: "1password", title: "1Password" }
+  assert.equal(TrayModel.ownedByOmarchy(item, {}, ["omarchy.dropbox"]), false)
+})
+
 test("item display name prefers title, then tooltip, then the last path segment", () => {
   assert.equal(TrayModel.itemDisplayName({ title: "1Password" }), "1Password")
   assert.equal(TrayModel.itemDisplayName({ title: "  ", tooltipTitle: "Dropbox" }), "Dropbox")
