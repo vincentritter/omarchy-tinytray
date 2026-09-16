@@ -6,6 +6,8 @@ Tinytray is an opinionated hover drawer for the Omarchy bar. App icons such as 1
 
 Stock Omarchy only draws tray apps. Bluetooth, Network, and Display are bar widgets, so they stay on the bar unless something hosts them. Tinytray replaces `omarchy.tray` and hosts those three in the drawer on first run. Pin an app icon to keep it visible. Hide one to take it off the bar.
 
+![Tinytray collapsed](screenshots/collapsed.png)
+
 ![Tinytray drawer](screenshots/drawer.png)
 
 ## Install

@@ -36,7 +36,7 @@ Omarchy’s bar already lets you drag widgets to reorder them. Dropping a widget
 
 ## Screenshots
 
-`preview.png` is the manage card. `screenshots/` has the drawer, manage, and settings shots. Recapture on an empty workspace so the terminal is not in the crop. Do not commit a `Tray.qml` that opens settings on every manage click; that is only a local capture trick.
+`preview.png` is the manage card. `screenshots/` has the collapsed bar, drawer, manage, and settings shots. Recapture on an empty workspace so the terminal is not in the crop. Do not commit a `Tray.qml` that opens settings on every manage click; that is only a local capture trick.
 
 ## Git
 
