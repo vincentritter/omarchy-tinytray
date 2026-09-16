@@ -46,4 +46,6 @@ The built-in tray comes back. Hosted widgets return after it, in the order they 
 
 If the shell was not running, run `~/.config/omarchy/tinytray-restore`. The copy in the plugin directory still does both steps: `~/.config/omarchy/plugins/vincentritter.tinytray/uninstall`.
 
+Tinytray is [MIT](LICENSE) licensed. It needs Omarchy. Catalog scan and restore use Python 3.
+
 Built by [Vincent Ritter](https://vincentritter.com).
