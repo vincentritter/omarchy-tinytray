@@ -24,7 +24,7 @@ Hover the chevron to open the drawer. These shots use the dot. Click it to host 
 
 ![Tinytray manage menu](preview.png)
 
-The menu lists widgets on this side of the bar, and installed widgets that are not on the bar. It does not take anything off the other side. A switch on hosts the widget in the tray and removes it from this side. A switch off puts it back. Widgets that are installed but missing from the layout are marked not on the bar.
+The menu lists widgets on this side of the bar, and installed widgets that are not on the bar. It does not take anything off the other side. A switch on hosts the widget in the tray and removes it from this side. A switch off puts it back on this side, after Tinytray. Widgets that are installed but missing from the layout are marked not on the bar.
 
 LocalSend is left out. Its tray item has no state, its click does nothing, and it picks a new id every launch, so hiding it by hand would not stick. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is on the bar or in the drawer, so you do not get two Dropbox marks.
 

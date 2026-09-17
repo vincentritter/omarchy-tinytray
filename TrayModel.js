@@ -105,15 +105,32 @@ function toggleId(ids, id) {
   return next
 }
 
-function extraWidgetTogglePlan(currentIds, id, onBar) {
+function extraWidgetTogglePlan(currentIds, id, onBar, trayId) {
   var extras = toggleId(currentIds, id)
   var key = String(id || "")
   var adding = extras.indexOf(key) !== -1
   return {
     extras: extras,
     adding: adding,
-    setBarEnabled: adding ? (onBar ? false : null) : true
+    setBarEnabled: adding ? (onBar ? false : null) : true,
+    placeAfter: adding ? "" : String(trayId || "")
   }
+}
+
+function barWidgetCommand(id, enabled, placeAfter) {
+  var key = String(id || "")
+  if (!key) return []
+  if (!enabled) return ["omarchy", "plugin", "disable", key]
+  var cmd = ["omarchy", "plugin", "enable", key]
+  var after = String(placeAfter || "")
+  if (after) {
+    cmd.push("--after")
+    cmd.push(after)
+  } else {
+    cmd.push("--section")
+    cmd.push("right")
+  }
+  return cmd
 }
 
 function hostedIds(extraIds, layout) {
@@ -338,6 +355,7 @@ if (typeof module !== "undefined") {
     layoutSectionFor: layoutSectionFor,
     toggleId: toggleId,
     extraWidgetTogglePlan: extraWidgetTogglePlan,
+    barWidgetCommand: barWidgetCommand,
     hostedIds: hostedIds,
     hostedIdsIn: hostedIdsIn,
     layoutWithoutWidget: layoutWithoutWidget,

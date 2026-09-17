@@ -18,7 +18,7 @@ node --test TrayModel.test.js
 
 A new decision (catalog membership, hosting, persist merge, status copy, chevron ids, which app icons are filtered) belongs in `TrayModel.js` with a test that fails if that decision flips. QML is not unit-tested. Prove UI by using it in the running shell.
 
-Hosting something that is already on this side of the bar must disable that bar copy (`setBarEnabled: false`). Hosting something that is not on the bar must not (`setBarEnabled: null`). Pin, hide, and extra-widget writes must go through `mergeSettings` so they do not drop `chevron` or other keys.
+Hosting something that is already on this side of the bar must disable that bar copy (`setBarEnabled: false`). Hosting something that is not on the bar must not (`setBarEnabled: null`). Returning a widget to the bar must `plugin enable` it `--after` Tinytray (or `--section right` if Tinytray is gone). A bare enable parks most Omarchy widgets in the center, and the manage list then hides them because they are on the other side. Pin, hide, and extra-widget writes must go through `mergeSettings` so they do not drop `chevron` or other keys.
 
 ## UI
 

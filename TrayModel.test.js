@@ -187,11 +187,34 @@ test("adding a bar widget takes it off the bar so the tray can host it", () => {
   assert.deepEqual(add.extras, ["omarchy.bluetooth", "omarchy.audio"])
   assert.equal(add.adding, true)
   assert.equal(add.setBarEnabled, false)
+  assert.equal(add.placeAfter, "")
 
-  const remove = TrayModel.extraWidgetTogglePlan(["omarchy.bluetooth", "omarchy.audio"], "omarchy.audio", false)
+  const remove = TrayModel.extraWidgetTogglePlan(["omarchy.bluetooth", "omarchy.audio"], "omarchy.audio", false, "vincentritter.tinytray")
   assert.deepEqual(remove.extras, ["omarchy.bluetooth"])
   assert.equal(remove.adding, false)
   assert.equal(remove.setBarEnabled, true)
+  assert.equal(remove.placeAfter, "vincentritter.tinytray")
+})
+
+test("returning a widget to the bar enables it after Tinytray, not a bare enable", () => {
+  assert.deepEqual(
+    TrayModel.barWidgetCommand("omarchy.audio", true, "vincentritter.tinytray"),
+    ["omarchy", "plugin", "enable", "omarchy.audio", "--after", "vincentritter.tinytray"]
+  )
+})
+
+test("returning a widget without Tinytray as an anchor falls back to the right section", () => {
+  assert.deepEqual(
+    TrayModel.barWidgetCommand("omarchy.network", true, ""),
+    ["omarchy", "plugin", "enable", "omarchy.network", "--section", "right"]
+  )
+})
+
+test("hosting a bar widget still disables it without placement", () => {
+  assert.deepEqual(
+    TrayModel.barWidgetCommand("omarchy.audio", false, "vincentritter.tinytray"),
+    ["omarchy", "plugin", "disable", "omarchy.audio"]
+  )
 })
 
 test("adding an off-bar widget does not disable it on the bar", () => {

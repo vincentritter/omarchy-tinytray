@@ -235,10 +235,10 @@ BarWidget {
 
   property var barWidgetQueue: []
 
-  function setBarWidgetEnabled(id, enabled) {
+  function setBarWidgetEnabled(id, enabled, placeAfter) {
     if (!id) return
     var next = barWidgetQueue.slice()
-    next.push({ id: String(id), enabled: !!enabled })
+    next.push({ id: String(id), enabled: !!enabled, placeAfter: placeAfter || "" })
     barWidgetQueue = next
     root.runBarWidgetQueue()
   }
@@ -249,7 +249,7 @@ BarWidget {
     var next = barWidgetQueue.slice()
     var job = next.shift()
     barWidgetQueue = next
-    barWidgetCtl.command = ["omarchy", "plugin", job.enabled ? "enable" : "disable", job.id]
+    barWidgetCtl.command = TrayModel.barWidgetCommand(job.id, job.enabled, job.placeAfter)
     barWidgetCtl.running = true
   }
 
@@ -285,7 +285,7 @@ BarWidget {
 
   function toggleExtraWidget(iid) {
     var onBar = TrayModel.layoutHasWidget(root.bar && root.bar.layoutConfig, iid)
-    var plan = TrayModel.extraWidgetTogglePlan(extraWidgetIds, iid, onBar)
+    var plan = TrayModel.extraWidgetTogglePlan(extraWidgetIds, iid, onBar, root.moduleName)
     var extras = plan.extras
     var p = pinnedIds.slice(), h = hiddenIds.slice()
     if (!plan.adding) {
@@ -299,7 +299,7 @@ BarWidget {
       persistTrayState(p, h, extras)
       if (plan.setBarEnabled === false) root.setBarWidgetEnabled(iid, false)
     } else {
-      if (plan.setBarEnabled === true) root.setBarWidgetEnabled(iid, true)
+      if (plan.setBarEnabled === true) root.setBarWidgetEnabled(iid, true, plan.placeAfter)
       persistTrayState(p, h, extras)
     }
   }
