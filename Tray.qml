@@ -31,6 +31,7 @@ BarWidget {
   readonly property Component chevronMark: chevronShape === "dot" ? dotMark : (chevronShape === "caret" ? caretMark : null)
   readonly property color chevronColor: bar ? bar.barForeground : Color.foreground
   readonly property var chevronChoices: TrayModel.chevronOptions()
+  readonly property bool expandOnHover: TrayModel.expandOnHoverFromSettings(settings)
   readonly property var defaultExtraWidgets: TrayModel.defaultExtraWidgetIds()
   property var extraWidgetOverride: null
   readonly property var extraWidgetIds: extraWidgetOverride !== null
@@ -234,6 +235,16 @@ BarWidget {
 
   function persistChevron(id) {
     persistTrayState(pinnedIds.slice(), hiddenIds.slice(), extraWidgetIds, { chevron: TrayModel.chevronIdFromSettings({ chevron: id }) })
+  }
+
+  function persistExpandOnHover(on) {
+    persistTrayState(pinnedIds.slice(), hiddenIds.slice(), extraWidgetIds, { expandOnHover: !!on })
+  }
+
+  function chevronPressed(button) {
+    var action = TrayModel.chevronClickAction(button, root.expandOnHover)
+    if (action === "manage") root.managePopupOpen = !root.managePopupOpen
+    else if (action === "drawer") root.expanded = !root.expanded
   }
 
   property var barWidgetQueue: []
@@ -522,7 +533,7 @@ BarWidget {
         visible: root.hasDrawer
 
         HoverHandler {
-          onHoveredChanged: root.expanded = hovered
+          onHoveredChanged: root.expanded = TrayModel.expandedAfterHover(hovered, root.expandOnHover, root.expanded)
         }
 
         BarIconButton {
@@ -533,11 +544,8 @@ BarWidget {
           x: root.drawerExtent - root.revealExtent
           text: root.chevronGlyph
           iconComponent: root.chevronMark
-          tooltipText: "Manage Tinytray"
-          onPressed: function(button) {
-            if (button === Qt.LeftButton || button === Qt.RightButton)
-              root.managePopupOpen = !root.managePopupOpen
-          }
+          tooltipText: root.expandOnHover ? "Manage Tinytray" : "Open Tinytray. Right-click to manage."
+          onPressed: function(button) { root.chevronPressed(button) }
         }
 
         Item {
@@ -616,7 +624,7 @@ BarWidget {
         visible: root.hasDrawer
 
         HoverHandler {
-          onHoveredChanged: root.expanded = hovered
+          onHoveredChanged: root.expanded = TrayModel.expandedAfterHover(hovered, root.expandOnHover, root.expanded)
         }
 
         BarIconButton {
@@ -628,11 +636,8 @@ BarWidget {
           text: root.chevronGlyph
           iconComponent: root.chevronMark
           textRotation: 90
-          tooltipText: "Manage Tinytray"
-          onPressed: function(button) {
-            if (button === Qt.LeftButton || button === Qt.RightButton)
-              root.managePopupOpen = !root.managePopupOpen
-          }
+          tooltipText: root.expandOnHover ? "Manage Tinytray" : "Open Tinytray. Right-click to manage."
+          onPressed: function(button) { root.chevronPressed(button) }
         }
 
         Item {
@@ -918,6 +923,18 @@ BarWidget {
                 }
               }
             }
+          }
+
+          Toggle {
+            width: parent.width
+            label: "Expand on hover"
+            description: root.expandOnHover
+              ? "The drawer opens when the pointer reaches the chevron."
+              : "Click the chevron to open the drawer. Right-click it for this menu."
+            checked: root.expandOnHover
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: root.persistExpandOnHover(!root.expandOnHover)
           }
 
           Text {

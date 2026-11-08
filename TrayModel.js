@@ -332,6 +332,23 @@ function chevronIdFromSettings(settings) {
   return "chevron"
 }
 
+function expandOnHoverFromSettings(settings) {
+  return !(settings && settings.expandOnHover === false)
+}
+
+function expandedAfterHover(hovered, expandOnHover, expanded) {
+  if (!hovered) return false
+  return !!(expandOnHover || expanded)
+}
+
+function chevronClickAction(button, expandOnHover) {
+  var left = 1
+  var right = 2
+  if (button === right) return "manage"
+  if (button !== left) return ""
+  return expandOnHover ? "manage" : "drawer"
+}
+
 function mergeSettings(settings, moduleName, values) {
   var entry = { id: String(moduleName || "") }
   if (settings && typeof settings === "object") {
@@ -377,6 +394,9 @@ if (typeof module !== "undefined") {
     chevronGlyph: chevronGlyph,
     chevronShape: chevronShape,
     chevronIdFromSettings: chevronIdFromSettings,
+    expandOnHoverFromSettings: expandOnHoverFromSettings,
+    expandedAfterHover: expandedAfterHover,
+    chevronClickAction: chevronClickAction,
     mergeSettings: mergeSettings
   }
 }

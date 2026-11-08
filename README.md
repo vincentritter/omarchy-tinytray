@@ -28,7 +28,7 @@ The menu lists widgets on this side of the bar, and installed widgets that are n
 
 LocalSend is left out. Its tray item has no state, its click does nothing, and it picks a new id every launch, so hiding it by hand would not stick. Dropbox’s native tray icon is hidden while the Omarchy Dropbox widget is on the bar or in the drawer, so you do not get two Dropbox marks.
 
-The gear opens settings, including which chevron to show.
+The gear opens settings, including which chevron to show. Turn off **Expand on hover** if the drawer should stay shut until you ask for it. Then a click on the chevron opens the drawer, a right-click opens the menu, and moving the pointer away closes the drawer.
 
 ![Tinytray settings](screenshots/settings.png)
 

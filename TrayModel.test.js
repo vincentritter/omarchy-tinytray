@@ -413,6 +413,7 @@ test("restore strips Tinytray keys off omarchy.tray", () => {
       id: "omarchy.tray",
       extraWidgets: ["omarchy.bluetooth"],
       chevron: "dot",
+      expandOnHover: false,
       hidden: [],
       pinned: [],
       showPercentage: false
@@ -561,6 +562,37 @@ test("dot and caret draw as shapes while the other chevrons stay font glyphs", (
   }
   assert.equal(TrayModel.chevronShape("nope"), "")
   assert.equal(TrayModel.chevronShape(TrayModel.chevronIdFromSettings({ chevron: "dot" })), "dot")
+})
+
+test("hover expand is on unless settings turn it off", () => {
+  assert.equal(TrayModel.expandOnHoverFromSettings({}), true)
+  assert.equal(TrayModel.expandOnHoverFromSettings(null), true)
+  assert.equal(TrayModel.expandOnHoverFromSettings({ expandOnHover: true }), true)
+  assert.equal(TrayModel.expandOnHoverFromSettings({ expandOnHover: false }), false)
+  assert.equal(TrayModel.expandOnHoverFromSettings({ expandOnHover: "false" }), true)
+})
+
+test("hovering opens the drawer only when hover expand is on", () => {
+  assert.equal(TrayModel.expandedAfterHover(true, true, false), true)
+  assert.equal(TrayModel.expandedAfterHover(true, false, false), false)
+  assert.equal(TrayModel.expandedAfterHover(true, false, true), true)
+})
+
+test("leaving the tray closes the drawer either way", () => {
+  assert.equal(TrayModel.expandedAfterHover(false, true, true), false)
+  assert.equal(TrayModel.expandedAfterHover(false, false, true), false)
+})
+
+test("chevron clicks open Manage with hover expand and toggle the drawer without it", () => {
+  const left = 1
+  const right = 2
+  const middle = 4
+  assert.equal(TrayModel.chevronClickAction(left, true), "manage")
+  assert.equal(TrayModel.chevronClickAction(right, true), "manage")
+  assert.equal(TrayModel.chevronClickAction(left, false), "drawer")
+  assert.equal(TrayModel.chevronClickAction(right, false), "manage")
+  assert.equal(TrayModel.chevronClickAction(middle, true), "")
+  assert.equal(TrayModel.chevronClickAction(middle, false), "")
 })
 
 test("mergeSettings keeps existing keys and applies updates", () => {

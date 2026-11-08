@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 DEFAULT_HOSTED = ["omarchy.bluetooth", "omarchy.network", "omarchy.monitor"]
-TINYTRAY_KEYS = ("extraWidgets", "chevron", "hidden", "pinned")
+TINYTRAY_KEYS = ("extraWidgets", "chevron", "expandOnHover", "hidden", "pinned")
 TRAY_ID = "vincentritter.tinytray"
 STOCK_TRAY = "omarchy.tray"
 HELPER_NAME = "tinytray-restore"
