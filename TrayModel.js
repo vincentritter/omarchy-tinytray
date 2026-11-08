@@ -298,21 +298,29 @@ function itemDisplayName(item) {
 function chevronOptions() {
   return [
     { value: "chevron", label: "Chevron", glyph: "\uf053" },
-    { value: "caret", label: "Caret", glyph: "\uf0d9" },
+    { value: "caret", label: "Caret", glyph: "\uf0d9", shape: "caret" },
     { value: "angle", label: "Angle", glyph: "\uf104" },
     { value: "arrow", label: "Arrow", glyph: "\uf060" },
     { value: "double", label: "Double", glyph: "\uf100" },
-    { value: "dot", label: "Dot", glyph: "\ueb8a" }
+    { value: "dot", label: "Dot", glyph: "\ueb8a", shape: "dot" }
   ]
 }
 
-function chevronGlyph(id) {
+function chevronOption(id) {
   var key = String(id || "chevron")
   var options = chevronOptions()
   for (var i = 0; i < options.length; i++) {
-    if (options[i].value === key) return options[i].glyph
+    if (options[i].value === key) return options[i]
   }
-  return options[0].glyph
+  return options[0]
+}
+
+function chevronGlyph(id) {
+  return chevronOption(id).glyph
+}
+
+function chevronShape(id) {
+  return chevronOption(id).shape || ""
 }
 
 function chevronIdFromSettings(settings) {
@@ -367,6 +375,7 @@ if (typeof module !== "undefined") {
     itemDisplayName: itemDisplayName,
     chevronOptions: chevronOptions,
     chevronGlyph: chevronGlyph,
+    chevronShape: chevronShape,
     chevronIdFromSettings: chevronIdFromSettings,
     mergeSettings: mergeSettings
   }
