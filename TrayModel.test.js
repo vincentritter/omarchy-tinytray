@@ -595,6 +595,24 @@ test("chevron clicks open Manage with hover expand and toggle the drawer without
   assert.equal(TrayModel.chevronClickAction(middle, false), "")
 })
 
+test("hover opens the drawer after a short wait and closes it after a grace period", () => {
+  assert.deepEqual(TrayModel.hoverTransition(true, true, false), { expanded: true, delay: TrayModel.HOVER_OPEN_DELAY })
+  assert.deepEqual(TrayModel.hoverTransition(false, true, true), { expanded: false, delay: TrayModel.HOVER_CLOSE_DELAY })
+  assert.ok(TrayModel.HOVER_OPEN_DELAY > 0)
+  assert.ok(TrayModel.HOVER_CLOSE_DELAY > 0)
+})
+
+test("hover with nothing to change cancels a pending open or close", () => {
+  assert.equal(TrayModel.hoverTransition(true, true, true), null)
+  assert.equal(TrayModel.hoverTransition(false, true, false), null)
+  assert.equal(TrayModel.hoverTransition(true, false, false), null)
+  assert.equal(TrayModel.hoverTransition(true, false, true), null)
+})
+
+test("leaving a click-opened drawer still closes it after the grace period", () => {
+  assert.deepEqual(TrayModel.hoverTransition(false, false, true), { expanded: false, delay: TrayModel.HOVER_CLOSE_DELAY })
+})
+
 test("mergeSettings keeps existing keys and applies updates", () => {
   const merged = TrayModel.mergeSettings(
     { pinned: ["a"], extraWidgets: ["omarchy.bluetooth"], chevron: "caret" },

@@ -244,7 +244,27 @@ BarWidget {
   function chevronPressed(button) {
     var action = TrayModel.chevronClickAction(button, root.expandOnHover)
     if (action === "manage") root.managePopupOpen = !root.managePopupOpen
-    else if (action === "drawer") root.expanded = !root.expanded
+    else if (action === "drawer") {
+      hoverTimer.stop()
+      root.expanded = !root.expanded
+    }
+  }
+
+  function drawerHoverChanged(hovered) {
+    var change = TrayModel.hoverTransition(hovered, root.expandOnHover, root.expanded)
+    if (!change) {
+      hoverTimer.stop()
+      return
+    }
+    hoverTimer.target = change.expanded
+    hoverTimer.interval = change.delay
+    hoverTimer.restart()
+  }
+
+  Timer {
+    id: hoverTimer
+    property bool target: false
+    onTriggered: root.expanded = target
   }
 
   property var barWidgetQueue: []
@@ -533,7 +553,7 @@ BarWidget {
         visible: root.hasDrawer
 
         HoverHandler {
-          onHoveredChanged: root.expanded = TrayModel.expandedAfterHover(hovered, root.expandOnHover, root.expanded)
+          onHoveredChanged: root.drawerHoverChanged(hovered)
         }
 
         BarIconButton {
@@ -624,7 +644,7 @@ BarWidget {
         visible: root.hasDrawer
 
         HoverHandler {
-          onHoveredChanged: root.expanded = TrayModel.expandedAfterHover(hovered, root.expandOnHover, root.expanded)
+          onHoveredChanged: root.drawerHoverChanged(hovered)
         }
 
         BarIconButton {

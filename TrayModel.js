@@ -341,6 +341,15 @@ function expandedAfterHover(hovered, expandOnHover, expanded) {
   return !!(expandOnHover || expanded)
 }
 
+var HOVER_OPEN_DELAY = 180
+var HOVER_CLOSE_DELAY = 300
+
+function hoverTransition(hovered, expandOnHover, expanded) {
+  var next = expandedAfterHover(hovered, expandOnHover, expanded)
+  if (next === !!expanded) return null
+  return { expanded: next, delay: next ? HOVER_OPEN_DELAY : HOVER_CLOSE_DELAY }
+}
+
 function chevronClickAction(button, expandOnHover) {
   var left = 1
   var right = 2
@@ -397,6 +406,9 @@ if (typeof module !== "undefined") {
     expandOnHoverFromSettings: expandOnHoverFromSettings,
     expandedAfterHover: expandedAfterHover,
     chevronClickAction: chevronClickAction,
+    HOVER_OPEN_DELAY: HOVER_OPEN_DELAY,
+    HOVER_CLOSE_DELAY: HOVER_CLOSE_DELAY,
+    hoverTransition: hoverTransition,
     mergeSettings: mergeSettings
   }
 }
