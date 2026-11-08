@@ -613,6 +613,25 @@ test("leaving a click-opened drawer still closes it after the grace period", () 
   assert.deepEqual(TrayModel.hoverTransition(false, false, true), { expanded: false, delay: TrayModel.HOVER_CLOSE_DELAY })
 })
 
+test("only drawer apps that need attention mark the chevron", () => {
+  const attention = 2
+  const items = [
+    { id: "slack", title: "Slack", status: attention },
+    { id: "nm", title: "Network", status: 1 },
+    { id: "1password", tooltipTitle: "1Password", status: attention }
+  ]
+  assert.deepEqual(TrayModel.attentionNames(items, attention), ["Slack", "1Password"])
+  assert.deepEqual(TrayModel.attentionNames([{ id: "nm", status: 1 }], attention), [])
+  assert.deepEqual(TrayModel.attentionNames(null, attention), [])
+})
+
+test("chevron tooltip names the apps that need attention", () => {
+  assert.equal(TrayModel.chevronTooltip("Manage Tinytray", []), "Manage Tinytray")
+  assert.equal(TrayModel.chevronTooltip("Manage Tinytray", ["Slack"]), "Slack needs attention")
+  assert.equal(TrayModel.chevronTooltip("Manage Tinytray", ["Slack", "1Password"]), "Slack and 1Password need attention")
+  assert.equal(TrayModel.chevronTooltip("Manage Tinytray", ["Slack", "1Password", "Zoom"]), "Slack, 1Password, and Zoom need attention")
+})
+
 test("mergeSettings keeps existing keys and applies updates", () => {
   const merged = TrayModel.mergeSettings(
     { pinned: ["a"], extraWidgets: ["omarchy.bluetooth"], chevron: "caret" },

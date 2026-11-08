@@ -350,6 +350,22 @@ function hoverTransition(hovered, expandOnHover, expanded) {
   return { expanded: next, delay: next ? HOVER_OPEN_DELAY : HOVER_CLOSE_DELAY }
 }
 
+function attentionNames(items, needsAttention) {
+  var names = []
+  if (!items) return names
+  for (var i = 0; i < items.length; i++) {
+    if (items[i] && items[i].status === needsAttention) names.push(itemDisplayName(items[i]))
+  }
+  return names
+}
+
+function chevronTooltip(base, names) {
+  if (!names || names.length === 0) return base
+  if (names.length === 1) return names[0] + " needs attention"
+  if (names.length === 2) return names[0] + " and " + names[1] + " need attention"
+  return names.slice(0, -1).join(", ") + ", and " + names[names.length - 1] + " need attention"
+}
+
 function chevronClickAction(button, expandOnHover) {
   var left = 1
   var right = 2
@@ -409,6 +425,8 @@ if (typeof module !== "undefined") {
     HOVER_OPEN_DELAY: HOVER_OPEN_DELAY,
     HOVER_CLOSE_DELAY: HOVER_CLOSE_DELAY,
     hoverTransition: hoverTransition,
+    attentionNames: attentionNames,
+    chevronTooltip: chevronTooltip,
     mergeSettings: mergeSettings
   }
 }

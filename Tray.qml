@@ -29,7 +29,9 @@ BarWidget {
   readonly property string chevronGlyph: TrayModel.chevronGlyph(chevronId)
   readonly property string chevronShape: TrayModel.chevronShape(chevronId)
   readonly property Component chevronMark: chevronShape === "dot" ? dotMark : (chevronShape === "caret" ? caretMark : null)
-  readonly property color chevronColor: bar ? bar.barForeground : Color.foreground
+  readonly property color chevronColor: drawerNeedsAttention
+    ? (bar ? bar.urgent : Color.urgent)
+    : (bar ? bar.barForeground : Color.foreground)
   readonly property var chevronChoices: TrayModel.chevronOptions()
   readonly property bool expandOnHover: TrayModel.expandOnHoverFromSettings(settings)
   readonly property var defaultExtraWidgets: TrayModel.defaultExtraWidgetIds()
@@ -55,6 +57,10 @@ BarWidget {
   readonly property var hostedHiddenIds: TrayModel.hostedIdsIn(hostedWidgetIds, pinnedIds, hiddenIds, "hidden")
   readonly property var pinnedItems: bucket("pinned")
   readonly property var drawerItems: bucket("drawer")
+  readonly property var attentionNames: TrayModel.attentionNames(drawerItems, Status.NeedsAttention)
+  readonly property bool drawerNeedsAttention: attentionNames.length > 0
+  readonly property string chevronTooltipText: TrayModel.chevronTooltip(
+    expandOnHover ? "Manage Tinytray" : "Open Tinytray. Right-click to manage.", attentionNames)
   readonly property var allItems: bucket("all")
   readonly property var manageItems: allItems
   readonly property bool hasDrawer: allItems.length > 0 || hostedWidgetIds.length > 0
@@ -564,7 +570,8 @@ BarWidget {
           x: root.drawerExtent - root.revealExtent
           text: root.chevronGlyph
           iconComponent: root.chevronMark
-          tooltipText: root.expandOnHover ? "Manage Tinytray" : "Open Tinytray. Right-click to manage."
+          active: root.drawerNeedsAttention
+          tooltipText: root.chevronTooltipText
           onPressed: function(button) { root.chevronPressed(button) }
         }
 
@@ -656,7 +663,8 @@ BarWidget {
           text: root.chevronGlyph
           iconComponent: root.chevronMark
           textRotation: 90
-          tooltipText: root.expandOnHover ? "Manage Tinytray" : "Open Tinytray. Right-click to manage."
+          active: root.drawerNeedsAttention
+          tooltipText: root.chevronTooltipText
           onPressed: function(button) { root.chevronPressed(button) }
         }
 
