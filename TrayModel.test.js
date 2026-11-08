@@ -546,6 +546,23 @@ test("chevron glyph maps known ids and defaults to the chevron mark", () => {
   assert.equal(TrayModel.chevronGlyph(""), "\uf053")
 })
 
+test("chevron picker keeps its six choices in order", () => {
+  assert.deepEqual(
+    TrayModel.chevronOptions().map((option) => option.value),
+    ["chevron", "caret", "angle", "arrow", "double", "dot"]
+  )
+})
+
+test("dot and caret draw as shapes while the other chevrons stay font glyphs", () => {
+  assert.equal(TrayModel.chevronShape("dot"), "dot")
+  assert.equal(TrayModel.chevronShape("caret"), "caret")
+  for (const id of ["chevron", "angle", "arrow", "double"]) {
+    assert.equal(TrayModel.chevronShape(id), "", id)
+  }
+  assert.equal(TrayModel.chevronShape("nope"), "")
+  assert.equal(TrayModel.chevronShape(TrayModel.chevronIdFromSettings({ chevron: "dot" })), "dot")
+})
+
 test("mergeSettings keeps existing keys and applies updates", () => {
   const merged = TrayModel.mergeSettings(
     { pinned: ["a"], extraWidgets: ["omarchy.bluetooth"], chevron: "caret" },

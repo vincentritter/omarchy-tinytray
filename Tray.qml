@@ -3,6 +3,7 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell.Services.SystemTray
 import qs.Commons
 import qs.Ui
@@ -26,7 +27,9 @@ BarWidget {
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
   readonly property string chevronId: TrayModel.chevronIdFromSettings(settings)
   readonly property string chevronGlyph: TrayModel.chevronGlyph(chevronId)
-  readonly property real chevronFontSize: Math.max(1, Math.round(Style.bar.iconFont * 0.85))
+  readonly property string chevronShape: TrayModel.chevronShape(chevronId)
+  readonly property Component chevronMark: chevronShape === "dot" ? dotMark : (chevronShape === "caret" ? caretMark : null)
+  readonly property color chevronColor: bar ? bar.barForeground : Color.foreground
   readonly property var chevronChoices: TrayModel.chevronOptions()
   readonly property var defaultExtraWidgets: TrayModel.defaultExtraWidgetIds()
   property var extraWidgetOverride: null
@@ -430,6 +433,54 @@ BarWidget {
     NumberAnimation { duration: root.animationDuration; easing.type: Easing.OutCubic }
   }
 
+  Component {
+    id: dotMark
+
+    Rectangle {
+      width: Style.bar.iconSize
+      height: Style.bar.iconSize
+      color: "transparent"
+
+      Shape {
+        id: dot
+        anchors.centerIn: parent
+        width: Math.round(parent.width / 2)
+        height: width
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+          fillColor: root.chevronColor
+          strokeColor: "transparent"
+          strokeWidth: 0
+          PathAngleArc { centerX: dot.width / 2; centerY: dot.height / 2; radiusX: dot.width / 2; radiusY: dot.height / 2; sweepAngle: 360 }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: caretMark
+
+    Shape {
+      id: caret
+      width: Math.round(Style.bar.iconSize * 0.6)
+      height: Style.bar.iconSize
+      rotation: root.vertical ? 90 : 0
+      preferredRendererType: Shape.CurveRenderer
+
+      ShapePath {
+        fillColor: root.chevronColor
+        strokeColor: "transparent"
+        strokeWidth: 0
+        startX: caret.width
+        startY: 0
+        PathLine { x: 0; y: caret.height / 2 }
+        PathLine { x: caret.width; y: caret.height }
+        PathLine { x: caret.width; y: 0 }
+      }
+    }
+  }
+
   Loader {
     id: trayContent
     anchors.fill: parent
@@ -481,7 +532,7 @@ BarWidget {
           height: implicitHeight
           x: root.drawerExtent - root.revealExtent
           text: root.chevronGlyph
-          fontSize: root.chevronFontSize
+          iconComponent: root.chevronMark
           tooltipText: "Manage Tinytray"
           onPressed: function(button) {
             if (button === Qt.LeftButton || button === Qt.RightButton)
@@ -575,7 +626,7 @@ BarWidget {
           height: implicitHeight
           y: root.drawerExtent - root.revealExtent
           text: root.chevronGlyph
-          fontSize: root.chevronFontSize
+          iconComponent: root.chevronMark
           textRotation: 90
           tooltipText: "Manage Tinytray"
           onPressed: function(button) {
